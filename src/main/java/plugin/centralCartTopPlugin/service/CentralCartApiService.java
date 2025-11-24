@@ -124,13 +124,43 @@ public class CentralCartApiService {
         for (int i = 0; i < dataArray.size(); i++) {
             JsonObject customerObj = dataArray.get(i).getAsJsonObject();
             TopCustomer customer = new TopCustomer();
-            customer.setName(customerObj.get("name").getAsString());
-            customer.setTotal(customerObj.get("total").getAsDouble());
+
+            // A API retorna "username" ao invés de "name"
+            String username = customerObj.get("username").getAsString();
+            customer.setName(username);
+
+            // A API retorna "spent" como string formatada (ex: "R$ 1.139,99")
+            // Vamos extrair apenas o número
+            String spentStr = customerObj.get("spent").getAsString();
+            double total = parseSpentValue(spentStr);
+            customer.setTotal(total);
+
             customer.setPosition(i + 1);
             customers.add(customer);
+
+            logger.info("Top " + (i + 1) + ": " + username + " - " + spentStr);
         }
 
         return customers;
+    }
+
+    /**
+     * Converte o valor formatado "R$ 1.139,99" para double 1139.99
+     */
+    private double parseSpentValue(String spent) {
+        try {
+            // Remove "R$", espaços e pontos (milhares)
+            // Substitui vírgula por ponto (decimal)
+            String cleaned = spent
+                .replace("R$", "")
+                .replace(" ", "")
+                .replace(".", "")
+                .replace(",", ".");
+            return Double.parseDouble(cleaned);
+        } catch (Exception e) {
+            logger.warning("Erro ao parsear valor: " + spent);
+            return 0.0;
+        }
     }
 }
 

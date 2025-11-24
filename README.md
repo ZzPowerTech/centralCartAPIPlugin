@@ -170,9 +170,9 @@ Exemplo de saída do comando `/topdonadores`:
       TOP 3 DOADORES DO MÊS ANTERIOR
 ========================================
 
-🥇 #1 - João Silva (R$ 1.234,56)
-🥈 #2 - Maria Santos (R$ 987,65)
-🥉 #3 - Pedro Costa (R$ 654,32)
+🥇 #1 - ZzPowerTechzZ (R$ 1139,99)
+🥈 #2 - fjZariel_ (R$ 110,00)
+🥉 #3 - herick_gamer (R$ 1,01)
 
 ========================================
 ```
