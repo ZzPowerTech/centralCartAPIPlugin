@@ -1,4 +1,12 @@
 name: centralCartTopPlugin
-version: '1.0-SNAPSHOT'
+version: '1.0'
 main: plugin.centralCartTopPlugin.CentralCartTopPlugin
 api-version: '1.21'
+author: CentralCart
+description: Plugin para exibir os top doadores da CentralCart
+
+commands:
+  topdonadores:
+    description: Mostra os top 3 doadores do mês anterior
+    usage: /topdonadores
+    aliases: [topdoadores, topdonors]
