@@ -3,50 +3,72 @@ package plugin.centralCartTopPlugin.command;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 import plugin.centralCartTopPlugin.model.TopCustomer;
 import plugin.centralCartTopPlugin.service.CentralCartApiService;
 
-import java.util.List;
-
 public class TopDonadoresCommand implements CommandExecutor {
 
     private final CentralCartApiService apiService;
+    private final FileConfiguration config;
 
-    public TopDonadoresCommand(CentralCartApiService apiService) {
+    public TopDonadoresCommand(CentralCartApiService apiService, FileConfiguration config) {
         this.apiService = apiService;
+        this.config = config;
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        sender.sendMessage("§e§l[CentralCart] §aBuscando top doadores do mês anterior...");
+        // Mensagem de carregamento configurável
+        String loadingMsg = config.getString("messages.loading", "§e§l[CentralCart] §aBuscando top doadores...");
+        sender.sendMessage(loadingMsg);
 
         apiService.getTop3DonatorsPreviousMonth().thenAccept(top3 -> {
             if (top3.isEmpty()) {
-                sender.sendMessage("§c§l[CentralCart] §cNão foi possível buscar os dados. Verifique os logs.");
+                String errorMsg = config.getString("messages.error", "§c§l[CentralCart] §cNão foi possível buscar os dados.");
+                sender.sendMessage(errorMsg);
                 return;
             }
 
-            sender.sendMessage("§6§l========================================");
-            sender.sendMessage("§e§l      TOP 3 DOADORES DO MÊS ANTERIOR");
-            sender.sendMessage("§6§l========================================");
+            // Mensagens configuráveis do header
+            String header = config.getString("messages.header", "§6§l========================================");
+            String title = config.getString("messages.title", "§e§l      TOP 3 DOADORES DO MÊS ANTERIOR");
+            String footer = config.getString("messages.footer", "§6§l========================================");
+
+            sender.sendMessage(header);
+            sender.sendMessage(title);
+            sender.sendMessage(header);
             sender.sendMessage("");
+
+            // Configurações de exibição
+            boolean showTotal = config.getBoolean("display.show-total", true);
+            String currencySymbol = config.getString("display.currency-symbol", "R$");
 
             for (TopCustomer customer : top3) {
                 String medal = getMedal(customer.getPosition());
-                sender.sendMessage(String.format("§f%s §6#%d §f- §e%s §7(R$ %.2f)",
-                        medal,
-                        customer.getPosition(),
-                        customer.getName(),
-                        customer.getTotal()));
+
+                if (showTotal) {
+                    sender.sendMessage(String.format("§f%s §6#%d §f- §e%s §7(%s %.2f)",
+                            medal,
+                            customer.getPosition(),
+                            customer.getName(),
+                            currencySymbol,
+                            customer.getTotal()));
+                } else {
+                    sender.sendMessage(String.format("§f%s §6#%d §f- §e%s",
+                            medal,
+                            customer.getPosition(),
+                            customer.getName()));
+                }
             }
 
             sender.sendMessage("");
-            sender.sendMessage("§6§l========================================");
+            sender.sendMessage(footer);
 
         }).exceptionally(throwable -> {
-            sender.sendMessage("§c§l[CentralCart] §cErro ao buscar dados: " + throwable.getMessage());
-            throwable.printStackTrace();
+            String errorMsg = config.getString("messages.error", "§c§l[CentralCart] §cErro ao buscar dados.");
+            sender.sendMessage(errorMsg + " " + throwable.getMessage());
             return null;
         });
 
@@ -54,16 +76,21 @@ public class TopDonadoresCommand implements CommandExecutor {
     }
 
     private String getMedal(int position) {
+        String medal;
         switch (position) {
             case 1:
-                return "§6🥇";
+                medal = config.getString("medals.first", "§6🥇");
+                break;
             case 2:
-                return "§7🥈";
+                medal = config.getString("medals.second", "§7🥈");
+                break;
             case 3:
-                return "§c🥉";
+                medal = config.getString("medals.third", "§c🥉");
+                break;
             default:
-                return "§f";
+                medal = "§f";
         }
+        return medal;
     }
 }
 

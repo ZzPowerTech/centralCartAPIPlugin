@@ -3,7 +3,7 @@ package plugin.centralCartTopPlugin.service;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
+import org.bukkit.configuration.file.FileConfiguration;
 import plugin.centralCartTopPlugin.model.TopCustomer;
 
 import java.io.BufferedReader;
@@ -20,14 +20,27 @@ import java.util.logging.Logger;
 
 public class CentralCartApiService {
 
-    private static final String API_URL = "https://api.centralcart.com.br/v1/app/widget/top_customers";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Gson gson;
     private final Logger logger;
+    private final String apiUrl;
+    private final int timeout;
+    private final String authToken;
 
-    public CentralCartApiService(Logger logger) {
+    public CentralCartApiService(Logger logger, FileConfiguration config) {
         this.gson = new Gson();
         this.logger = logger;
+        this.apiUrl = config.getString("api.url", "https://api.centralcart.com.br/v1/app/widget/top_customers");
+        this.timeout = config.getInt("api.timeout", 5000);
+        this.authToken = config.getString("api.token", "");
+
+        // Validar se o token foi configurado
+        if (authToken.isEmpty() || authToken.equals("COLOQUE_SEU_TOKEN_AQUI")) {
+            logger.warning("==========================================");
+            logger.warning("ATENÇÃO: Token de autenticação não configurado!");
+            logger.warning("Configure o token em: plugins/centralCartTopPlugin/config.yml");
+            logger.warning("==========================================");
+        }
     }
 
     /**
@@ -59,7 +72,6 @@ public class CentralCartApiService {
 
             } catch (Exception e) {
                 logger.severe("Erro ao buscar top doadores: " + e.getMessage());
-                e.printStackTrace();
                 return new ArrayList<>();
             }
         });
@@ -69,16 +81,23 @@ public class CentralCartApiService {
      * Faz a requisição HTTP para a API
      */
     private List<TopCustomer> fetchTopCustomers(String from, String to) throws Exception {
-        String urlString = API_URL + "?from=" + from + "&to=" + to;
+        String urlString = apiUrl + "?from=" + from + "&to=" + to;
         URL url = new URL(urlString);
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Accept", "application/json");
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
+        connection.setRequestProperty("Authorization", "Bearer " + authToken);
+        connection.setConnectTimeout(timeout);
+        connection.setReadTimeout(timeout);
 
         int responseCode = connection.getResponseCode();
+
+        if (responseCode == 401) {
+            logger.severe("Erro de autenticação (401 Unauthorized)");
+            logger.severe("Verifique se o token está configurado corretamente em config.yml");
+            throw new Exception("Token de autenticação inválido ou ausente");
+        }
 
         if (responseCode != 200) {
             throw new Exception("HTTP error code: " + responseCode);
@@ -96,7 +115,7 @@ public class CentralCartApiService {
         connection.disconnect();
 
         // Parse JSON
-        logger.info("Resposta da API: " + response.toString());
+        logger.info("Resposta da API recebida com sucesso");
 
         JsonObject jsonResponse = gson.fromJson(response.toString(), JsonObject.class);
         JsonArray dataArray = jsonResponse.getAsJsonArray("data");

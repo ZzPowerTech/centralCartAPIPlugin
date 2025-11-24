@@ -1,0 +1,29 @@
+# Configuração do CentralCart Top Plugin
+
+# URL da API CentralCart
+api:
+  url: "https://api.centralcart.com.br/v1/app/widget/top_customers"
+  timeout: 5000 # Timeout em milissegundos
+  # IMPORTANTE: Nunca compartilhe este token publicamente!
+  # Obtenha seu token em: https://centralcart.com.br
+  token: "COLOQUE_SEU_TOKEN_AQUI"
+
+# Mensagens personalizáveis
+messages:
+  loading: "§e§l[CentralCart] §aBuscando top doadores do mês anterior..."
+  error: "§c§l[CentralCart] §cNão foi possível buscar os dados. Verifique os logs."
+  header: "§6§l========================================"
+  title: "§e§l      TOP 3 DOADORES DO MÊS ANTERIOR"
+  footer: "§6§l========================================"
+
+# Formato de exibição
+display:
+  show-total: true # Exibir valor total doado
+  currency-symbol: "R$" # Símbolo da moeda
+
+# Medalhas por posição
+medals:
+  first: "§6🥇"
+  second: "§7🥈"
+  third: "§c🥉"
+
