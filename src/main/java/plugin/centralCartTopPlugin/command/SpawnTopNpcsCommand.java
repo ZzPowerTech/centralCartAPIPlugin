@@ -1,21 +1,23 @@
 package plugin.centralCartTopPlugin.command;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
+import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.model.TopCustomer;
 import plugin.centralCartTopPlugin.service.CentralCartApiService;
 import plugin.centralCartTopPlugin.service.TopNpcManager;
 
-import java.util.List;
-
 public class SpawnTopNpcsCommand implements CommandExecutor {
 
+    private final CentralCartTopPlugin plugin;
     private final CentralCartApiService apiService;
     private final TopNpcManager npcManager;
 
-    public SpawnTopNpcsCommand(CentralCartApiService apiService, TopNpcManager npcManager) {
+    public SpawnTopNpcsCommand(CentralCartTopPlugin plugin, CentralCartApiService apiService, TopNpcManager npcManager) {
+        this.plugin = plugin;
         this.apiService = apiService;
         this.npcManager = npcManager;
     }
@@ -41,17 +43,32 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
                 return;
             }
 
-            try {
-                npcManager.createOrUpdateNPCs(top3);
-                sender.sendMessage("§a§l[CentralCart] §aNPCs dos top doadores criados com sucesso!");
-                sender.sendMessage("§a§l[CentralCart] §aTop doadores:");
+            // Executa a criação de NPCs na thread principal (sincronamente)
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    npcManager.createOrUpdateNPCs(top3);
+                    sender.sendMessage("§a§l[CentralCart] §aNPCs atualizados com sucesso!");
+                    sender.sendMessage("§6§l========================================");
+                    sender.sendMessage("§e§l        NPCs DOS TOP DOADORES");
+                    sender.sendMessage("§6§l========================================");
 
-                for (TopCustomer customer : top3) {
-                    sender.sendMessage("§f  " + customer.getPosition() + "º - §e" + customer.getName());
+                    for (TopCustomer customer : top3) {
+                        String medal = customer.getPosition() == 1 ? "§6🥇" :
+                                      customer.getPosition() == 2 ? "§7🥈" : "§c🥉";
+                        sender.sendMessage(String.format("§f%s §6#%d §f- §e%s §7(§aR$ %.2f§7)",
+                                medal,
+                                customer.getPosition(),
+                                customer.getName(),
+                                customer.getTotal()));
+                    }
+
+                    sender.sendMessage("§6§l========================================");
+                    sender.sendMessage("§a§lℹ §aOs NPCs foram movidos/atualizados nas coordenadas configuradas!");
+                } catch (Exception e) {
+                    sender.sendMessage("§c§l[CentralCart] §cErro ao criar NPCs: " + e.getMessage());
+                    plugin.getLogger().severe("Erro ao criar NPCs: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                sender.sendMessage("§c§l[CentralCart] §cErro ao criar NPCs: " + e.getMessage());
-            }
+            });
         }).exceptionally(throwable -> {
             sender.sendMessage("§c§l[CentralCart] §cErro ao buscar dados: " + throwable.getMessage());
             return null;

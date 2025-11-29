@@ -63,8 +63,8 @@ public final class CentralCartTopPlugin extends JavaPlugin {
      * Registra todos os comandos do plugin
      */
     private void registerCommands() {
-        getCommand("topdonadores").setExecutor(new TopDonadoresCommand(apiService, getConfig()));
-        getCommand("spawntopnpcs").setExecutor(new SpawnTopNpcsCommand(apiService, npcManager));
+        getCommand("topdonadores").setExecutor(new TopDonadoresCommand(this));
+        getCommand("spawntopnpcs").setExecutor(new SpawnTopNpcsCommand(this, apiService, npcManager));
         getCommand("removetopnpcs").setExecutor(new RemoveTopNpcsCommand(npcManager));
         getCommand("centralcartreload").setExecutor(new ReloadCommand(this));
     }
@@ -74,7 +74,13 @@ public final class CentralCartTopPlugin extends JavaPlugin {
      */
     public void reloadServices() {
         getLogger().info("§e[CentralCartTopPlugin] Reinicializando serviços...");
+
+        // Reinicializa serviços com nova config
         initializeServices();
+
+        // Re-registra comandos para usar novos serviços e config
+        registerCommands();
+
         getLogger().info("§a[CentralCartTopPlugin] Serviços reinicializados!");
     }
 

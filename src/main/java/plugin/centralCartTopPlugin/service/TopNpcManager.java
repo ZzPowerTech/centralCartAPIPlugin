@@ -3,6 +3,7 @@ package plugin.centralCartTopPlugin.service;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
+import net.citizensnpcs.trait.SkinTrait;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -52,25 +53,22 @@ public class TopNpcManager {
 
         NPCRegistry registry = CitizensAPI.getNPCRegistry();
 
-        // Remove NPCs antigos primeiro
-        removeAllNPCs();
-
         for (TopCustomer customer : topCustomers) {
             try {
-                createNPC(registry, customer);
+                updateOrCreateNPC(registry, customer);
             } catch (Exception e) {
-                logger.severe("Erro ao criar NPC para " + customer.getName() + ": " + e.getMessage());
+                logger.severe("Erro ao atualizar/criar NPC para " + customer.getName() + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }
 
-        logger.info("NPCs dos top doadores criados/atualizados com sucesso!");
+        logger.info("NPCs dos top doadores atualizados com sucesso!");
     }
 
     /**
-     * Cria um NPC individual
+     * Atualiza um NPC existente ou cria um novo
      */
-    private void createNPC(NPCRegistry registry, TopCustomer customer) {
+    private void updateOrCreateNPC(NPCRegistry registry, TopCustomer customer) {
         int position = customer.getPosition();
         String positionKey = getPositionKey(position);
 
@@ -91,17 +89,52 @@ public class TopNpcManager {
             "§e{player} §7- " + position + "º Lugar");
         displayName = displayName.replace("{player}", customer.getName());
 
-        // Cria o NPC
-        NPC npc = registry.createNPC(EntityType.PLAYER, customer.getName());
-        npc.setName(displayName);
+        // Verifica se já existe um NPC nesta posição
+        NPC npc = null;
+        if (npcIds.containsKey(position)) {
+            npc = registry.getById(npcIds.get(position));
+        }
 
-        // Spawn do NPC
-        npc.spawn(location);
+        if (npc != null) {
+            // Atualiza NPC existente
+            logger.info("Atualizando NPC na posição " + position + " para " + customer.getName());
 
-        // Salva o ID do NPC
-        npcIds.put(position, npc.getId());
+            // Atualiza o nome exibido
+            npc.setName(displayName);
 
-        logger.info("NPC criado: " + displayName + " na posição " + position);
+            // Atualiza a skin do jogador
+            if (npc.hasTrait(SkinTrait.class)) {
+                SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
+                skinTrait.setSkinName(customer.getName());
+            }
+
+            // Move o NPC para a nova localização (teleporta)
+            if (npc.isSpawned()) {
+                npc.teleport(location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
+            } else {
+                npc.spawn(location);
+            }
+
+            logger.info("NPC atualizado: " + displayName + " movido para " + formatLocation(location));
+        } else {
+            // Cria novo NPC
+            logger.info("Criando novo NPC na posição " + position + " para " + customer.getName());
+
+            npc = registry.createNPC(EntityType.PLAYER, customer.getName());
+            npc.setName(displayName);
+
+            // Define a skin do jogador
+            SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
+            skinTrait.setSkinName(customer.getName());
+
+            // Spawn do NPC
+            npc.spawn(location);
+
+            // Salva o ID do NPC
+            npcIds.put(position, npc.getId());
+
+            logger.info("NPC criado: " + displayName + " na posição " + formatLocation(location));
+        }
     }
 
     /**
@@ -124,6 +157,9 @@ public class TopNpcManager {
         }
 
         npcIds.clear();
+
+        // Limpa os IDs salvos no config
+        config.set("npcs.saved_ids", null);
 
         if (removed > 0) {
             logger.info("Removidos " + removed + " NPCs dos top doadores.");
@@ -170,6 +206,13 @@ public class TopNpcManager {
             default:
                 return null;
         }
+    }
+
+    /**
+     * Formata localização para log
+     */
+    private String formatLocation(Location loc) {
+        return String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ());
     }
 
     /**

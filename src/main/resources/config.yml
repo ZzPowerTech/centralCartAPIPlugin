@@ -30,6 +30,10 @@ medals:
 # Configuração dos NPCs (requer Citizens)
 npcs:
   enabled: true # Ativar criação automática de NPCs
+  # ATENÇÃO: Os NPCs são reutilizados! Ao executar /spawntopnpcs:
+  # - NPCs existentes serão movidos e atualizados
+  # - Novos NPCs só são criados se não existirem
+  # - A skin do jogador é atualizada automaticamente
   # Localizações dos NPCs (world, x, y, z, yaw, pitch)
   locations:
     first:
@@ -55,7 +59,7 @@ npcs:
       pitch: 0.0
   # Nomes exibidos acima dos NPCs
   names:
-    first: "§6🥇 {player} §e- 1º Lugar"
-    second: "§7🥈 {player} §e- 2º Lugar"
-    third: "§c🥉 {player} §e- 3º Lugar"
+    first: "§6{player} §e- 1º Lugar"
+    second: "§7 {player} §e- 2º Lugar"
+    third: "§c {player} §e- 3º Lugar"
 
