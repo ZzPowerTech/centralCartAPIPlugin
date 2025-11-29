@@ -26,13 +26,17 @@ public class CentralCartApiService {
     private final String apiUrl;
     private final int timeout;
     private final String authToken;
+    private final int retryAttempts;
+    private final int retryDelay;
 
     public CentralCartApiService(Logger logger, FileConfiguration config) {
         this.gson = new Gson();
         this.logger = logger;
         this.apiUrl = config.getString("api.url", "https://api.centralcart.com.br/v1/app/widget/top_customers");
-        this.timeout = config.getInt("api.timeout", 5000);
+        this.timeout = config.getInt("api.timeout", 15000);
         this.authToken = config.getString("api.token", "");
+        this.retryAttempts = config.getInt("api.retry_attempts", 3);
+        this.retryDelay = config.getInt("api.retry_delay", 2000);
 
         // Validar se o token foi configurado
         if (authToken.isEmpty() || authToken.equals("COLOQUE_SEU_TOKEN_AQUI")) {
@@ -48,32 +52,67 @@ public class CentralCartApiService {
      */
     public CompletableFuture<List<TopCustomer>> getTop3DonatorsPreviousMonth() {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                // Calcula o mês anterior
-                YearMonth lastMonth = YearMonth.now().minusMonths(1);
-                LocalDate fromDate = lastMonth.atDay(1);
-                LocalDate toDate = lastMonth.atEndOfMonth();
+            // Calcula o mês anterior
+            YearMonth lastMonth = YearMonth.now().minusMonths(1);
+            LocalDate fromDate = lastMonth.atDay(1);
+            LocalDate toDate = lastMonth.atEndOfMonth();
 
-                String from = fromDate.format(DATE_FORMATTER);
-                String to = toDate.format(DATE_FORMATTER);
+            String from = fromDate.format(DATE_FORMATTER);
+            String to = toDate.format(DATE_FORMATTER);
 
-                logger.info("Buscando top doadores de " + from + " até " + to);
+            logger.info("Buscando top doadores de " + from + " até " + to);
 
-                // Faz a requisição à API
-                List<TopCustomer> allCustomers = fetchTopCustomers(from, to);
+            // Tenta buscar com retry
+            for (int attempt = 1; attempt <= retryAttempts; attempt++) {
+                try {
+                    if (attempt > 1) {
+                        logger.info("Tentativa " + attempt + " de " + retryAttempts + "...");
+                    }
 
-                // Retorna apenas os 3 primeiros
-                List<TopCustomer> top3 = new ArrayList<>();
-                for (int i = 0; i < Math.min(3, allCustomers.size()); i++) {
-                    top3.add(allCustomers.get(i));
+                    // Faz a requisição à API
+                    List<TopCustomer> allCustomers = fetchTopCustomers(from, to);
+
+                    // Retorna apenas os 3 primeiros
+                    List<TopCustomer> top3 = new ArrayList<>();
+                    for (int i = 0; i < Math.min(3, allCustomers.size()); i++) {
+                        top3.add(allCustomers.get(i));
+                    }
+
+                    return top3;
+
+                } catch (java.net.SocketTimeoutException e) {
+                    logger.warning("Timeout na tentativa " + attempt + " de " + retryAttempts);
+                    if (attempt == retryAttempts) {
+                        logger.severe("Erro de timeout após " + retryAttempts + " tentativas!");
+                        logger.severe("A API demorou mais que " + (timeout / 1000) + " segundos para responder.");
+                        logger.severe("Tente aumentar o timeout em config.yml: api.timeout");
+                    } else {
+                        try {
+                            Thread.sleep(retryDelay);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                } catch (java.net.UnknownHostException e) {
+                    logger.severe("Erro: Não foi possível conectar à API CentralCart");
+                    logger.severe("Verifique sua conexão com a internet");
+                    break; // Não tenta novamente em caso de erro de DNS
+                } catch (Exception e) {
+                    logger.warning("Erro na tentativa " + attempt + ": " + e.getMessage());
+                    if (attempt == retryAttempts) {
+                        logger.severe("Erro ao buscar top doadores após " + retryAttempts + " tentativas: " + e.getMessage());
+                        e.printStackTrace();
+                    } else {
+                        try {
+                            Thread.sleep(retryDelay);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
                 }
-
-                return top3;
-
-            } catch (Exception e) {
-                logger.severe("Erro ao buscar top doadores: " + e.getMessage());
-                return new ArrayList<>();
             }
+
+            return new ArrayList<>();
         });
     }
 

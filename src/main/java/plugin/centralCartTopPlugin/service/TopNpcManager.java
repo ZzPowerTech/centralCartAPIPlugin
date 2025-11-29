@@ -27,6 +27,9 @@ public class TopNpcManager {
         this.logger = logger;
         this.config = config;
         this.npcIds = new HashMap<>();
+
+        // Carrega IDs salvos dos NPCs
+        loadNpcIds();
     }
 
     /**
@@ -61,6 +64,9 @@ public class TopNpcManager {
                 e.printStackTrace();
             }
         }
+
+        // Salva os IDs no config
+        saveNpcIds();
 
         logger.info("NPCs dos top doadores atualizados com sucesso!");
     }
@@ -213,6 +219,36 @@ public class TopNpcManager {
      */
     private String formatLocation(Location loc) {
         return String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ());
+    }
+
+    /**
+     * Carrega os IDs dos NPCs salvos no config
+     */
+    private void loadNpcIds() {
+        if (config.contains("npcs.saved_ids")) {
+            ConfigurationSection idsSection = config.getConfigurationSection("npcs.saved_ids");
+            if (idsSection != null) {
+                for (String key : idsSection.getKeys(false)) {
+                    try {
+                        int position = Integer.parseInt(key);
+                        int npcId = idsSection.getInt(key);
+                        npcIds.put(position, npcId);
+                        logger.info("NPC ID carregado: posição " + position + " -> ID " + npcId);
+                    } catch (NumberFormatException e) {
+                        logger.warning("Chave inválida no saved_ids: " + key);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Salva os IDs dos NPCs no config
+     */
+    private void saveNpcIds() {
+        for (Map.Entry<Integer, Integer> entry : npcIds.entrySet()) {
+            config.set("npcs.saved_ids." + entry.getKey(), entry.getValue());
+        }
     }
 
     /**

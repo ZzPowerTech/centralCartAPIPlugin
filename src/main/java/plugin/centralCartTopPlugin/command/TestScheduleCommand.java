@@ -7,19 +7,13 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.model.TopCustomer;
-import plugin.centralCartTopPlugin.service.CentralCartApiService;
-import plugin.centralCartTopPlugin.service.TopNpcManager;
 
-public class SpawnTopNpcsCommand implements CommandExecutor {
+public class TestScheduleCommand implements CommandExecutor {
 
     private final CentralCartTopPlugin plugin;
-    private final CentralCartApiService apiService;
-    private final TopNpcManager npcManager;
 
-    public SpawnTopNpcsCommand(CentralCartTopPlugin plugin, CentralCartApiService apiService, TopNpcManager npcManager) {
+    public TestScheduleCommand(CentralCartTopPlugin plugin) {
         this.plugin = plugin;
-        this.apiService = apiService;
-        this.npcManager = npcManager;
     }
 
     @Override
@@ -29,38 +23,34 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
             return true;
         }
 
-        if (!npcManager.isCitizensEnabled()) {
+        if (!plugin.getNpcManager().isCitizensEnabled()) {
             sender.sendMessage("§c§l[CentralCart] §cO plugin Citizens não está instalado ou habilitado!");
-            sender.sendMessage("§c§l[CentralCart] §cBaixe em: https://www.spigotmc.org/resources/citizens.13811/");
             return true;
         }
 
-        sender.sendMessage("§e§l[CentralCart] §aBuscando top doadores para criar os NPCs...");
+        sender.sendMessage("§e§l[CentralCart] §eTestando atualização automática mensal...");
+        sender.sendMessage("§e§l[CentralCart] §eSimulando que hoje é dia 1º do mês...");
 
-        apiService.getTop3DonatorsPreviousMonth().thenAccept(top3 -> {
+        // Simula a atualização automática
+        plugin.getApiService().getTop3DonatorsPreviousMonth().thenAccept(top3 -> {
             if (top3.isEmpty()) {
                 sender.sendMessage("§c§l[CentralCart] §cNão foi possível buscar os dados dos top doadores.");
-                sender.sendMessage("§c§l[CentralCart] §cVerifique os logs do servidor para mais detalhes.");
-                sender.sendMessage("§e§l[CentralCart] §ePossíveis causas:");
-                sender.sendMessage("§e  - API fora do ar ou lenta");
-                sender.sendMessage("§e  - Timeout muito baixo (atual: " + plugin.getConfig().getInt("api.timeout", 5000) + "ms)");
-                sender.sendMessage("§e  - Token de autenticação inválido");
-                sender.sendMessage("§e  - Sem conexão com a internet");
+                plugin.getLogger().warning("§c[CentralCart] Falha no teste de atualização automática.");
                 return;
             }
 
-            // Executa a criação de NPCs na thread principal (sincronamente)
+            // Executa na thread principal (sincronamente)
             Bukkit.getScheduler().runTask(plugin, () -> {
                 try {
-                    npcManager.createOrUpdateNPCs(top3);
-
-                    // Salva o config com os IDs dos NPCs
+                    plugin.getNpcManager().createOrUpdateNPCs(top3);
                     plugin.saveConfig();
 
-                    sender.sendMessage("§a§l[CentralCart] §aNPCs atualizados com sucesso!");
+                    sender.sendMessage("§a§l[CentralCart] §a✓ Teste de atualização automática bem-sucedido!");
                     sender.sendMessage("§6§l========================================");
-                    sender.sendMessage("§e§l        NPCs DOS TOP DOADORES");
+                    sender.sendMessage("§e§l   SIMULAÇÃO DE ATUALIZAÇÃO MENSAL");
                     sender.sendMessage("§6§l========================================");
+                    sender.sendMessage("§a§lℹ §aOs NPCs foram atualizados como se fosse dia 1º do mês!");
+                    sender.sendMessage("");
 
                     for (TopCustomer customer : top3) {
                         String medal = customer.getPosition() == 1 ? "§6🥇" :
@@ -72,11 +62,17 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
                                 customer.getTotal()));
                     }
 
+                    sender.sendMessage("");
                     sender.sendMessage("§6§l========================================");
-                    sender.sendMessage("§a§lℹ §aOs NPCs foram movidos/atualizados nas coordenadas configuradas!");
+                    sender.sendMessage("§a§lℹ §aEsta é uma simulação. No servidor real, isso");
+                    sender.sendMessage("§a   acontecerá automaticamente todo dia 1º às 00:00h");
+                    sender.sendMessage("§6§l========================================");
+
+                    plugin.getLogger().info("§a[CentralCart] Teste de atualização automática executado com sucesso!");
+
                 } catch (Exception e) {
-                    sender.sendMessage("§c§l[CentralCart] §cErro ao criar NPCs: " + e.getMessage());
-                    plugin.getLogger().severe("Erro ao criar NPCs: " + e.getMessage());
+                    sender.sendMessage("§c§l[CentralCart] §cErro ao testar atualização: " + e.getMessage());
+                    plugin.getLogger().severe("Erro no teste de atualização automática: " + e.getMessage());
                 }
             });
         }).exceptionally(throwable -> {

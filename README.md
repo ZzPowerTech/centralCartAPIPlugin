@@ -27,6 +27,8 @@ Este plugin se conecta à API da CentralCart e busca automaticamente os top 3 do
 | `/spawntopnpcs` | - | Cria/atualiza NPCs dos top doadores | `centralcart.admin` |
 | `/removetopnpcs` | - | Remove todos os NPCs dos top doadores | `centralcart.admin` |
 | `/centralcartreload` | `/ccreload`, `/centralreload` | Recarrega as configurações do plugin | `centralcart.admin` |
+| `/testschedule` | `/testaratualizacao`, `/testupdate` | Testa a atualização automática mensal | `centralcart.admin` |
+| `/scheduleinfo` | `/infoatualizacao`, `/schedulestat` | Mostra informações da próxima atualização | `centralcart.admin` |
 
 ## 📦 Instalação
 
@@ -191,8 +193,14 @@ Com o Citizens instalado, você pode criar NPCs dos top doadores:
    - Nome exibido personalizado
    - Posição no ranking
 
-**Atualizando mensalmente:**
-Simplesmente execute `/spawntopnpcs` novamente no início do mês para atualizar automaticamente!
+**Atualização Automática Mensal:**
+- ✅ **Todo dia 1º do mês às 00:00h** os NPCs são atualizados automaticamente!
+- ✅ Os administradores online recebem notificação
+- ✅ Os logs registram a atualização
+- ✅ Para desativar: `npcs.auto_update_enabled: false` no config.yml
+
+**Atualização Manual:**
+Execute `/spawntopnpcs` a qualquer momento para atualizar os NPCs manualmente.
 
 ## 🚀 CI/CD
 

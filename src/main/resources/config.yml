@@ -3,7 +3,9 @@
 # URL da API CentralCart
 api:
   url: "https://api.centralcart.com.br/v1/app/widget/top_customers"
-  timeout: 5000 # Timeout em milissegundos
+  timeout: 15000 # Timeout em milissegundos (15 segundos)
+  retry_attempts: 3 # Número de tentativas em caso de falha
+  retry_delay: 2000 # Delay entre tentativas em milissegundos (2 segundos)
   # IMPORTANTE: Nunca compartilhe este token publicamente!
   # Obtenha seu token em: https://centralcart.com.br
   token: "COLOQUE_SEU_TOKEN_AQUI"
@@ -30,10 +32,16 @@ medals:
 # Configuração dos NPCs (requer Citizens)
 npcs:
   enabled: true # Ativar criação automática de NPCs
+  auto_update_enabled: true # Atualizar NPCs automaticamente todo dia 1º do mês
   # ATENÇÃO: Os NPCs são reutilizados! Ao executar /spawntopnpcs:
   # - NPCs existentes serão movidos e atualizados
   # - Novos NPCs só são criados se não existirem
   # - A skin do jogador é atualizada automaticamente
+  #
+  # ATUALIZAÇÃO AUTOMÁTICA:
+  # - Todo dia 1º do mês às 00:00h os NPCs são atualizados automaticamente
+  # - Os administradores online são notificados
+  # - Os logs registram a atualização
   # Localizações dos NPCs (world, x, y, z, yaw, pitch)
   locations:
     first:

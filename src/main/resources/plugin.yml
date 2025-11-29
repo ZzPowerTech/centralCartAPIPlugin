@@ -24,3 +24,13 @@ commands:
     usage: /centralcartreload
     permission: centralcart.admin
     aliases: [ccreload, centralreload]
+  testschedule:
+    description: Testa a atualização automática mensal de NPCs
+    usage: /testschedule
+    permission: centralcart.admin
+    aliases: [testaratualizacao, testupdate]
+  scheduleinfo:
+    description: Mostra informações sobre a atualização automática
+    usage: /scheduleinfo
+    permission: centralcart.admin
+    aliases: [infoatualizacao, schedulestat]
