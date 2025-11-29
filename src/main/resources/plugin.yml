@@ -4,9 +4,23 @@ main: plugin.centralCartTopPlugin.CentralCartTopPlugin
 api-version: '1.21'
 author: CentralCart
 description: Plugin para exibir os top doadores da CentralCart
+softdepend: [Citizens]
 
 commands:
   topdonadores:
     description: Mostra os top 3 doadores do mês anterior
     usage: /topdonadores
     aliases: [topdoadores, topdonors]
+  spawntopnpcs:
+    description: Cria ou atualiza os NPCs dos top doadores
+    usage: /spawntopnpcs
+    permission: centralcart.admin
+  removetopnpcs:
+    description: Remove todos os NPCs dos top doadores
+    usage: /removetopnpcs
+    permission: centralcart.admin
+  centralcartreload:
+    description: Recarrega as configurações do plugin
+    usage: /centralcartreload
+    permission: centralcart.admin
+    aliases: [ccreload, centralreload]

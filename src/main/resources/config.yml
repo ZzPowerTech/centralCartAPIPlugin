@@ -27,3 +27,35 @@ medals:
   second: "§7🥈"
   third: "§c🥉"
 
+# Configuração dos NPCs (requer Citizens)
+npcs:
+  enabled: true # Ativar criação automática de NPCs
+  # Localizações dos NPCs (world, x, y, z, yaw, pitch)
+  locations:
+    first:
+      world: "world"
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    second:
+      world: "world"
+      x: 3.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    third:
+      world: "world"
+      x: 6.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+  # Nomes exibidos acima dos NPCs
+  names:
+    first: "§6🥇 {player} §e- 1º Lugar"
+    second: "§7🥈 {player} §e- 2º Lugar"
+    third: "§c🥉 {player} §e- 3º Lugar"
+

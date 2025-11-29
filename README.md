@@ -23,7 +23,10 @@ Este plugin se conecta à API da CentralCart e busca automaticamente os top 3 do
 
 | Comando | Aliases | Descrição | Permissão |
 |---------|---------|-----------|-----------|
-| `/topdonadores` | `/topdoadores`, `/topdonors` | Mostra os top 3 doadores do mês anterior | Nenhuma (todos podem usar) |
+| `/topdonadores` | `/topdoadores`, `/topdonors` | Mostra os top 3 doadores do mês anterior | Nenhuma |
+| `/spawntopnpcs` | - | Cria/atualiza NPCs dos top doadores | `centralcart.admin` |
+| `/removetopnpcs` | - | Remove todos os NPCs dos top doadores | `centralcart.admin` |
+| `/centralcartreload` | `/ccreload`, `/centralreload` | Recarrega as configurações do plugin | `centralcart.admin` |
 
 ## 📦 Instalação
 
@@ -163,6 +166,7 @@ GET https://api.centralcart.com.br/v1/app/widget/top_customers?from=YYYY-MM-DD&t
 
 ## 📸 Preview
 
+### Comando no Chat
 Exemplo de saída do comando `/topdonadores`:
 
 ```
@@ -177,6 +181,19 @@ Exemplo de saída do comando `/topdonadores`:
 ========================================
 ```
 
+### NPCs no Servidor
+Com o Citizens instalado, você pode criar NPCs dos top doadores:
+
+1. **Configure as localizações** no `config.yml`
+2. **Execute** `/spawntopnpcs` para criar os NPCs
+3. Os NPCs serão criados com:
+   - Nome do jogador (skin do Minecraft)
+   - Nome exibido personalizado
+   - Posição no ranking
+
+**Atualizando mensalmente:**
+Simplesmente execute `/spawntopnpcs` novamente no início do mês para atualizar automaticamente!
+
 ## 🚀 CI/CD
 
 O projeto possui integração contínua configurada com GitHub Actions:
@@ -186,22 +203,6 @@ O projeto possui integração contínua configurada com GitHub Actions:
 - ✅ Cache do Gradle para builds mais rápidos
 - ✅ Criação automática de releases
 - ✅ Upload do JAR como artefato
-
-## 📝 Licença
-
-Este projeto é proprietário da CentralCart.
-
-## 🤝 Contribuindo
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
-
-## 📧 Suporte
-
-Para suporte, entre em contato através do site da [CentralCart](https://centralcart.com.br)
 
 ---
 

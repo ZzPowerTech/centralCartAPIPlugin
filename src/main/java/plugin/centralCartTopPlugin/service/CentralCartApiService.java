@@ -124,26 +124,26 @@ public class CentralCartApiService {
         for (int i = 0; i < dataArray.size(); i++) {
             JsonObject customerObj = dataArray.get(i).getAsJsonObject();
             TopCustomer customer = new TopCustomer();
-
+            
             // A API retorna "username" ao invés de "name"
             String username = customerObj.get("username").getAsString();
             customer.setName(username);
-
+            
             // A API retorna "spent" como string formatada (ex: "R$ 1.139,99")
             // Vamos extrair apenas o número
             String spentStr = customerObj.get("spent").getAsString();
             double total = parseSpentValue(spentStr);
             customer.setTotal(total);
-
+            
             customer.setPosition(i + 1);
             customers.add(customer);
-
+            
             logger.info("Top " + (i + 1) + ": " + username + " - " + spentStr);
         }
 
         return customers;
     }
-
+    
     /**
      * Converte o valor formatado "R$ 1.139,99" para double 1139.99
      */
