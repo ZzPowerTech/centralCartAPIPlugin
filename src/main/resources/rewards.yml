@@ -1,0 +1,153 @@
+# ========================================
+# Sistema de Recompensas - CentralCart Top Plugin
+# ========================================
+#
+# Configure as recompensas para os top 3 doadores do mês
+# As recompensas são entregues automaticamente no dia 1º do mês
+#
+# Se o jogador estiver offline, as recompensas são guardadas
+# e entregues assim que ele logar no servidor
+#
+# ========================================
+
+# Ativar/desativar sistema de recompensas
+enabled: true
+
+# Mensagens de anúncio
+messages:
+  # Broadcast quando as recompensas são distribuídas
+  broadcast:
+    - "§6§l========================================"
+    - "§e§l    🎉 RECOMPENSAS DO TOP DOADORES 🎉"
+    - "§6§l========================================"
+    - "§a§lParabéns aos top 3 doadores de {month}!"
+    - ""
+    - "§6🥇 1º Lugar: §e{first_player}"
+    - "§7🥈 2º Lugar: §e{second_player}"
+    - "§c🥉 3º Lugar: §e{third_player}"
+    - ""
+    - "§a§lAs recompensas foram entregues!"
+    - "§6§l========================================"
+
+  # Mensagem para o jogador quando recebe a recompensa (online)
+  player_received:
+    - "§6§l========================================"
+    - "§e§l      🎉 VOCÊ ESTÁ NO TOP {position}! 🎉"
+    - "§6§l========================================"
+    - "§a§lParabéns {player}!"
+    - "§fVocê foi o §e{position}º colocado §fnos doadores de §b{month}§f!"
+    - ""
+    - "§a§lRecompensas recebidas:"
+    - "{rewards_list}"
+    - "§6§l========================================"
+
+  # Mensagem quando o jogador loga e tem recompensas pendentes
+  pending_rewards:
+    - "§6§l========================================"
+    - "§e§l    🎁 VOCÊ TEM RECOMPENSAS PENDENTES!"
+    - "§6§l========================================"
+    - "§a§lParabéns {player}!"
+    - "§fVocê ficou em §e{position}º lugar §fnos doadores de §b{month}§f!"
+    - ""
+    - "§a§lRecompensas recebidas agora:"
+    - "{rewards_list}"
+    - "§6§l========================================"
+
+  # Mensagem se o inventário estiver cheio
+  inventory_full:
+    - "§c§l[!] Seu inventário está cheio!"
+    - "§c§lAlguns itens foram dropados no chão."
+
+# Configuração de recompensas por posição
+rewards:
+  # Recompensas para o 1º lugar
+  first:
+    # Lista de comandos a executar (use {player} para o nome do jogador)
+    commands:
+      - "give {player} minecraft:diamond 64"
+      - "give {player} minecraft:emerald_block 32"
+      - "eco give {player} 100000"
+      - "lp user {player} permission set vip.diamond true"
+
+    # Itens a entregar (formato Bukkit/Spigot)
+    items:
+      - material: DIAMOND
+        amount: 64
+        name: "§6§l🥇 Prêmio 1º Lugar"
+        lore:
+          - "§7Top Doador de {month}"
+          - "§e§lParabéns!"
+        enchantments:
+          - "UNBREAKING:3"
+
+      - material: EMERALD_BLOCK
+        amount: 32
+        name: "§a§lEsmeraldas de Campeão"
+        lore:
+          - "§7Recompensa exclusiva"
+          - "§7Top 1 Doador"
+
+  # Recompensas para o 2º lugar
+  second:
+    commands:
+      - "give {player} minecraft:diamond 32"
+      - "give {player} minecraft:emerald_block 16"
+      - "eco give {player} 50000"
+      - "lp user {player} permission set vip.gold true"
+
+    items:
+      - material: DIAMOND
+        amount: 32
+        name: "§7§l🥈 Prêmio 2º Lugar"
+        lore:
+          - "§7Top Doador de {month}"
+          - "§e§lParabéns!"
+        enchantments:
+          - "UNBREAKING:2"
+
+      - material: EMERALD_BLOCK
+        amount: 16
+        name: "§a§lEsmeraldas Premium"
+        lore:
+          - "§7Recompensa exclusiva"
+          - "§7Top 2 Doador"
+
+  # Recompensas para o 3º lugar
+  third:
+    commands:
+      - "give {player} minecraft:diamond 16"
+      - "give {player} minecraft:emerald_block 8"
+      - "eco give {player} 25000"
+      - "lp user {player} permission set vip.iron true"
+
+    items:
+      - material: DIAMOND
+        amount: 16
+        name: "§c§l🥉 Prêmio 3º Lugar"
+        lore:
+          - "§7Top Doador de {month}"
+          - "§e§lParabéns!"
+        enchantments:
+          - "UNBREAKING:1"
+
+      - material: EMERALD_BLOCK
+        amount: 8
+        name: "§a§lEsmeraldas Especiais"
+        lore:
+          - "§7Recompensa exclusiva"
+          - "§7Top 3 Doador"
+
+# Configurações avançadas
+settings:
+  # Executar comandos antes de entregar itens
+  commands_first: true
+
+  # Dropar itens no chão se o inventário estiver cheio
+  drop_if_full: true
+
+  # Salvar histórico de recompensas entregues
+  save_history: true
+
+  # Delay entre comandos (em ticks, 20 ticks = 1 segundo)
+  command_delay: 5
+

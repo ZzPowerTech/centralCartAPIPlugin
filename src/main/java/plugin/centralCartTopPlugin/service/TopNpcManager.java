@@ -30,6 +30,59 @@ public class TopNpcManager {
 
         // Carrega IDs salvos dos NPCs
         loadNpcIds();
+
+        // Carrega NPCs existentes na inicialização
+        loadExistingNPCs();
+    }
+
+    /**
+     * Carrega e valida NPCs existentes na inicialização
+     */
+    private void loadExistingNPCs() {
+        if (!isCitizensEnabled()) {
+            return;
+        }
+
+        if (npcIds.isEmpty()) {
+            logger.info("Nenhum NPC salvo encontrado.");
+            return;
+        }
+
+        NPCRegistry registry = CitizensAPI.getNPCRegistry();
+        int loaded = 0;
+        int missing = 0;
+
+        for (Map.Entry<Integer, Integer> entry : new HashMap<>(npcIds).entrySet()) {
+            int position = entry.getKey();
+            int npcId = entry.getValue();
+
+            NPC npc = registry.getById(npcId);
+            if (npc != null) {
+                // NPC existe, verifica se está spawnado
+                String positionKey = getPositionKey(position);
+                Location location = getLocationFromConfig(positionKey);
+
+                if (location != null && !npc.isSpawned()) {
+                    npc.spawn(location);
+                    logger.info("NPC carregado e spawnado: " + npc.getName() + " (posição " + position + ")");
+                    loaded++;
+                } else if (location != null && npc.isSpawned()) {
+                    logger.info("NPC já estava spawnado: " + npc.getName() + " (posição " + position + ")");
+                    loaded++;
+                }
+            } else {
+                logger.warning("NPC salvo (ID: " + npcId + ") não encontrado na posição " + position);
+                npcIds.remove(position);
+                missing++;
+            }
+        }
+
+        if (loaded > 0) {
+            logger.info("§a[CentralCart] " + loaded + " NPC(s) carregado(s) com sucesso!");
+        }
+        if (missing > 0) {
+            logger.warning("§e[CentralCart] " + missing + " NPC(s) não encontrado(s) e foram removidos da lista.");
+        }
     }
 
     /**

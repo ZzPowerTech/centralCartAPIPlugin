@@ -30,10 +30,16 @@ public class ReloadCommand implements CommandExecutor {
             // Reinicializa os serviços com a nova configuração
             plugin.reloadServices();
 
+            // Recarrega as recompensas
+            if (plugin.getRewardsManager() != null) {
+                plugin.getRewardsManager().reload();
+            }
+
             sender.sendMessage("§a§l[CentralCart] §aConfiguração recarregada com sucesso!");
             sender.sendMessage("§a§l[CentralCart] §aToken: " + (plugin.getConfig().getString("api.token", "").equals("COLOQUE_SEU_TOKEN_AQUI") ? "§c[NÃO CONFIGURADO]" : "§a[CONFIGURADO]"));
             sender.sendMessage("§a§l[CentralCart] §aNPCs: " + (plugin.getConfig().getBoolean("npcs.enabled", true) ? "§a[ATIVADO]" : "§c[DESATIVADO]"));
             sender.sendMessage("§a§l[CentralCart] §aCitizens: " + (plugin.getNpcManager().isCitizensEnabled() ? "§a[DETECTADO]" : "§c[NÃO ENCONTRADO]"));
+            sender.sendMessage("§a§l[CentralCart] §aRecompensas: " + (plugin.getRewardsManager() != null && plugin.getRewardsManager().isEnabled() ? "§a[ATIVADO]" : "§c[DESATIVADO]"));
 
         } catch (Exception e) {
             sender.sendMessage("§c§l[CentralCart] §cErro ao recarregar: " + e.getMessage());

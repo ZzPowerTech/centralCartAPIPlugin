@@ -74,6 +74,12 @@ public class MonthlyNpcUpdateTask extends BukkitRunnable {
                         plugin.getLogger().info("§a  " + customer.getPosition() + "º - " + customer.getName() + " (R$ " + customer.getTotal() + ")");
                     }
 
+                    // Distribui recompensas
+                    if (plugin.getRewardsManager() != null && plugin.getRewardsManager().isEnabled()) {
+                        plugin.getRewardsManager().distributeRewards(top3);
+                        plugin.getLogger().info("§a[CentralCart] Recompensas distribuídas automaticamente!");
+                    }
+
                     // Notifica admins online
                     notifyAdmins(top3);
 

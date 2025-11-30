@@ -7,7 +7,9 @@ import plugin.centralCartTopPlugin.command.ScheduleInfoCommand;
 import plugin.centralCartTopPlugin.command.SpawnTopNpcsCommand;
 import plugin.centralCartTopPlugin.command.TestScheduleCommand;
 import plugin.centralCartTopPlugin.command.TopDonadoresCommand;
+import plugin.centralCartTopPlugin.listener.PlayerJoinListener;
 import plugin.centralCartTopPlugin.service.CentralCartApiService;
+import plugin.centralCartTopPlugin.service.RewardsManager;
 import plugin.centralCartTopPlugin.service.TopNpcManager;
 import plugin.centralCartTopPlugin.task.MonthlyNpcUpdateTask;
 
@@ -15,6 +17,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
     private CentralCartApiService apiService;
     private TopNpcManager npcManager;
+    private RewardsManager rewardsManager;
     private MonthlyNpcUpdateTask monthlyUpdateTask;
 
     @Override
@@ -30,16 +33,25 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         // Registra os comandos
         registerCommands();
 
+        // Registra os listeners
+        registerListeners();
+
         getLogger().info("§a[CentralCartTopPlugin] Comandos registrados!");
         getLogger().info("§a[CentralCartTopPlugin] API URL: " + getConfig().getString("api.url"));
     }
 
     @Override
     public void onDisable() {
-        // Remove NPCs ao desabilitar o plugin
-        if (npcManager != null) {
-            npcManager.removeAllNPCs();
+        // Cancela a tarefa de atualização mensal
+        if (monthlyUpdateTask != null) {
+            monthlyUpdateTask.cancel();
         }
+
+        // NPCs não são removidos ao desabilitar para persistirem após restart
+        // Se quiser remover automaticamente, descomente a linha abaixo:
+        // if (npcManager != null) {
+        //     npcManager.removeAllNPCs();
+        // }
 
         getLogger().info("§c[CentralCartTopPlugin] Plugin desabilitado!");
     }
@@ -53,6 +65,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         
         // Inicializa o gerenciador de NPCs
         npcManager = new TopNpcManager(getLogger(), getConfig());
+
+        // Inicializa o gerenciador de recompensas
+        rewardsManager = new RewardsManager(this);
 
         // Verifica se Citizens está disponível
         if (npcManager.isCitizensEnabled()) {
@@ -73,6 +88,14 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         getCommand("centralcartreload").setExecutor(new ReloadCommand(this));
         getCommand("testschedule").setExecutor(new TestScheduleCommand(this));
         getCommand("scheduleinfo").setExecutor(new ScheduleInfoCommand(this));
+    }
+
+    /**
+     * Registra todos os listeners do plugin
+     */
+    private void registerListeners() {
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getLogger().info("§a[CentralCartTopPlugin] Listeners registrados!");
     }
 
     /**
@@ -123,5 +146,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
     public TopNpcManager getNpcManager() {
         return npcManager;
+    }
+
+    public RewardsManager getRewardsManager() {
+        return rewardsManager;
     }
 }

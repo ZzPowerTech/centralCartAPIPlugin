@@ -18,6 +18,10 @@ Este plugin se conecta à API da CentralCart e busca automaticamente os top 3 do
 - ✅ Timeout configurável para API
 - ✅ Opção de mostrar/ocultar valores totais
 - ✅ Símbolo de moeda configurável
+- ✅ **Sistema de recompensas automáticas**
+- ✅ **Recompensas pendentes para jogadores offline**
+- ✅ **Atualização automática mensal (dia 1º)**
+- ✅ **NPCs dos top doadores (requer Citizens)**
 
 ## 🎮 Comandos
 
@@ -34,11 +38,39 @@ Este plugin se conecta à API da CentralCart e busca automaticamente os top 3 do
 
 1. Baixe o arquivo `.jar` da seção [Releases](../../releases)
 2. Coloque o arquivo na pasta `plugins` do seu servidor
-3. Inicie o servidor (um arquivo `config.yml` será criado)
-4. Pare o servidor e edite `plugins/centralCartTopPlugin/config.yml`
-5. Configure seu token de API (veja seção Autenticação acima)
-6. Reinicie o servidor
-7. Use `/topdonadores` no jogo
+3. **(Opcional)** Instale o plugin [Citizens](https://www.spigotmc.org/resources/citizens.13811/) para NPCs
+4. Inicie o servidor (arquivos `config.yml` e `rewards.yml` serão criados)
+5. Pare o servidor e edite `plugins/centralCartTopPlugin/config.yml`:
+   - Configure seu **token de API** (obrigatório)
+   - Configure as **localizações dos NPCs** se desejar usar Citizens
+6. Edite `plugins/centralCartTopPlugin/rewards.yml` para configurar as recompensas
+7. Reinicie o servidor
+8. Use `/topdonadores` para testar
+
+## 🚀 Uso Rápido
+
+### Para Jogadores
+```
+/topdonadores - Ver os top 3 doadores do mês passado
+```
+
+### Para Administradores
+```
+/spawntopnpcs - Criar/atualizar NPCs dos top doadores
+/removetopnpcs - Remover todos os NPCs
+/centralcartreload - Recarregar configurações
+/testschedule - Testar atualização automática
+/scheduleinfo - Ver próxima atualização automática
+```
+
+### Atualização Automática
+
+O plugin atualiza automaticamente **todo dia 1º de cada mês às 00:00h**:
+- ✅ Busca os top 3 doadores do mês anterior
+- ✅ Atualiza os NPCs com os novos dados
+- ✅ Distribui recompensas automaticamente
+- ✅ Envia broadcast no servidor
+- ✅ Notifica administradores online
 
 ## ⚙️ Configuração
 
@@ -94,11 +126,100 @@ Você pode usar os seguintes códigos nas mensagens:
 - `§o` - Itálico
 - `§r` - Reset
 
+## 🎁 Sistema de Recompensas
+
+O plugin possui um sistema automático de recompensas para os top 3 doadores do mês.
+
+### Como Funciona
+
+1. **Dia 1º do mês**: Automaticamente às 00:00h, o sistema:
+   - Busca os top 3 doadores do mês anterior
+   - Atualiza os NPCs com os novos doadores
+   - Distribui as recompensas configuradas
+   - Envia broadcast para o servidor
+
+2. **Jogadores Online**: Recebem as recompensas imediatamente
+3. **Jogadores Offline**: As recompensas são salvas e entregues quando logarem
+
+### Configuração de Recompensas
+
+Edite o arquivo `rewards.yml` para configurar as recompensas:
+
+```yaml
+enabled: true  # Ativar/desativar sistema
+
+rewards:
+  first:  # 1º lugar
+    commands:  # Comandos executados pelo console
+      - "give {player} minecraft:diamond 64"
+      - "eco give {player} 100000"
+      - "lp user {player} permission set vip.diamond true"
+    
+    items:  # Itens entregues no inventário
+      - material: DIAMOND
+        amount: 64
+        name: "§6§l🥇 Prêmio 1º Lugar"
+        lore:
+          - "§7Top Doador de {month}"
+          - "§e§lParabéns!"
+        enchantments:
+          - "UNBREAKING:3"
+  
+  second:  # 2º lugar
+    commands:
+      - "give {player} minecraft:diamond 32"
+      - "eco give {player} 50000"
+    items:
+      - material: DIAMOND
+        amount: 32
+        name: "§7§l🥈 Prêmio 2º Lugar"
+  
+  third:  # 3º lugar
+    commands:
+      - "give {player} minecraft:diamond 16"
+      - "eco give {player} 25000"
+    items:
+      - material: DIAMOND
+        amount: 16
+        name: "§c§l🥉 Prêmio 3º Lugar"
+
+# Mensagens personalizadas
+messages:
+  broadcast:  # Anúncio público quando distribuir
+    - "§6§l========================================"
+    - "§e§l    🎉 RECOMPENSAS DO TOP DOADORES 🎉"
+    - "§a§lParabéns aos top 3 de {month}!"
+    - "§6🥇 1º: {first_player}"
+    - "§7🥈 2º: {second_player}"
+    - "§c🥉 3º: {third_player}"
+    - "§6§l========================================"
+  
+  player_received:  # Mensagem para quem recebeu online
+    - "§e§l🎉 VOCÊ ESTÁ NO TOP {position}! 🎉"
+    - "§fParabéns! Você ficou em §e{position}º lugar!"
+  
+  pending_rewards:  # Mensagem ao logar (estava offline)
+    - "§e§l🎁 VOCÊ TEM RECOMPENSAS PENDENTES!"
+    - "§fVocê ficou no top {position} de {month}!"
+```
+
+### Variáveis Disponíveis
+
+- `{player}` - Nome do jogador
+- `{month}` - Nome do mês em português (ex: "Outubro")
+- `{position}` - Posição no ranking (1º, 2º, 3º)
+- `{first_player}`, `{second_player}`, `{third_player}` - Nomes dos top 3
+
+### Materiais Disponíveis
+
+Consulte [esta lista](https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html) para nomes de materiais válidos.
+
 ## 🔧 Requisitos
 
 - **Servidor**: Paper/Spigot 1.21+
 - **Java**: 21+
 - **Token de API**: Token de autenticação da CentralCart (obrigatório)
+- **Citizens** (opcional): Para criar NPCs dos top doadores
 
 ## 🔐 Autenticação
 
