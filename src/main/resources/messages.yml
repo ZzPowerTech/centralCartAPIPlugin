@@ -120,22 +120,22 @@ test_rewards:
   check_broadcast: "&a  - &fBroadcast enviado para todos os jogadores online"
   check_online: "&a  - &fRecompensas entregues aos jogadores online"
   check_offline: "&a  - &fRecompensas salvas para jogadores offline"
-  check_file: "&e&l[CentralCart] &eArquivo: &fplugins/centralCartTopPlugin/pending_rewards.yml"
+  check_file: "&eArquivo: &fplugins/centralCartTopPlugin/pending_rewards.yml"
 
-  error_distribute: "&c&l[CentralCart] &cErro ao distribuir recompensas: {error}"
-  error_fetch_data: "&c&l[CentralCart] &cErro ao buscar dados: {error}"
+  error_distribute: "&cErro ao distribuir recompensas: {error}"
+  error_fetch_data: "&cErro ao buscar dados: {error}"
 
 # ====================================
 # COMANDO: /testschedule
 # ====================================
 test_schedule:
-  forcing: "&e&l[CentralCart] &eForçando atualização mensal dos NPCs..."
-  searching: "&e&l[CentralCart] &eBuscando top doadores do mês anterior..."
+  forcing: "&eForçando atualização mensal dos NPCs..."
+  searching: "&eBuscando top doadores do mês anterior..."
 
-  success: "&a&l[CentralCart] &aNPCs atualizados automaticamente!"
-  rewards_distributed: "&a&l[CentralCart] &aRecompensas distribuídas para os novos top doadores!"
+  success: "&aNPCs atualizados automaticamente!"
+  rewards_distributed: "&aRecompensas distribuídas para os novos top doadores!"
 
-  error: "&c&l[CentralCart] &cErro ao testar atualização: {error}"
+  error: "&cErro ao testar atualização: {error}"
 
 # ====================================
 # COMANDO: /scheduleinfo
@@ -174,8 +174,8 @@ cache_info:
   footer: "&6&l========================================"
 
   status: "&fStatus: {status}"
-  cleared: "&a&l[CentralCart] &aCache limpo com sucesso!"
-  cleared_info: "&e&l[CentralCart] &eA próxima consulta buscará dados novos da API."
+  cleared: "&aCache limpo com sucesso!"
+  cleared_info: "&eA próxima consulta buscará dados novos da API."
 
   benefits_header: "&e&lℹ Benefícios do Cache:"
   benefit_api: "&a  ✓ &fReduz chamadas à API"
@@ -196,19 +196,19 @@ cache_info:
 # ATUALIZAÇÃO AUTOMÁTICA MENSAL
 # ====================================
 monthly_update:
-  detected: "&e[CentralCart] Dia 1º do mês detectado! Atualizando NPCs automaticamente..."
-  no_citizens: "&c[CentralCart] Citizens não está disponível. Atualização automática cancelada."
-  disabled: "&e[CentralCart] Atualização automática desabilitada no config."
+  detected: "Dia 1º do mês detectado! Atualizando NPCs automaticamente..."
+  no_citizens: "Citizens não está disponível. Atualização automática cancelada."
+  disabled: "Atualização automática desabilitada no config."
 
-  error_fetch: "&c[CentralCart] Não foi possível buscar top doadores para atualização automática."
-  success: "&a[CentralCart] NPCs atualizados automaticamente com sucesso!"
-  new_top: "&a[CentralCart] Novos top doadores:"
+  error_fetch: "Não foi possível buscar top doadores para atualização automática."
+  success: "NPCs atualizados automaticamente com sucesso!"
+  new_top: "Novos top doadores:"
   # Formato: {position} {player} {currency} {total}
   top_line: "&a  {position}º - {player} ({currency} {total})"
 
-  rewards_distributed: "&a[CentralCart] Recompensas distribuídas automaticamente!"
-  error: "&c[CentralCart] Erro na atualização automática de NPCs: {error}"
-  error_fetch_data: "&c[CentralCart] Erro ao buscar dados para atualização automática: {error}"
+  rewards_distributed: "Recompensas distribuídas automaticamente!"
+  error: "Erro na atualização automática de NPCs: {error}"
+  error_fetch_data: "Erro ao buscar dados para atualização automática: {error}"
 
   # Notificação para admins
   notification_header: "&6&l========================================"
@@ -222,35 +222,35 @@ monthly_update:
 # LOGS DO SERVIDOR
 # ====================================
 logs:
-  plugin_enabled: "&a[CentralCartTopPlugin] Plugin iniciado com sucesso!"
-  plugin_disabled: "&c[CentralCartTopPlugin] Plugin desabilitado!"
+  plugin_enabled: "Plugin iniciado com sucesso!"
+  plugin_disabled: "Plugin desabilitado!"
 
-  citizens_detected: "&a[CentralCartTopPlugin] Citizens detectado! Sistema de NPCs habilitado."
-  citizens_not_found: "&e[CentralCartTopPlugin] Citizens não encontrado. Sistema de NPCs desabilitado."
-  citizens_install: "&e[CentralCartTopPlugin] Para usar NPCs, instale Citizens: https://www.spigotmc.org/resources/citizens.13811/"
+  citizens_detected: "Citizens detectado! Sistema de NPCs habilitado."
+  citizens_not_found: "Citizens não encontrado. Sistema de NPCs desabilitado."
+  citizens_install: "Para usar NPCs, instale Citizens: https://www.spigotmc.org/resources/citizens.13811/"
 
-  commands_registered: "&a[CentralCartTopPlugin] Comandos registrados!"
-  listeners_registered: "&a[CentralCartTopPlugin] Listeners registrados!"
-  api_url: "&a[CentralCartTopPlugin] API URL: {url}"
+  commands_registered: "Comandos registrados!"
+  listeners_registered: "Listeners registrados!"
+  api_url: "API URL: {url}"
 
-  auto_update_disabled: "&e[CentralCartTopPlugin] Atualização automática mensal desabilitada."
-  auto_update_enabled: "&a[CentralCartTopPlugin] Atualização automática mensal ativada!"
-  auto_update_info: "&a[CentralCartTopPlugin] Os NPCs serão atualizados automaticamente todo dia 1º às 00:00h"
+  auto_update_disabled: "Atualização automática mensal desabilitada."
+  auto_update_enabled: "Atualização automática mensal ativada!"
+  auto_update_info: "Os NPCs serão atualizados automaticamente todo dia 1º às 00:00h"
 
-  services_reloading: "&e[CentralCartTopPlugin] Reinicializando serviços..."
-  services_reloaded: "&a[CentralCartTopPlugin] Serviços reinicializados!"
+  services_reloading: "Reinicializando serviços..."
+  services_reloaded: "Serviços reinicializados!"
 
   no_saved_npcs: "Nenhum NPC salvo encontrado."
-  searching_top_auto: "&e[CentralCartTopPlugin] Nenhum NPC salvo encontrado — buscando top3 para spawn automático."
-  npcs_created_auto: "&a[CentralCartTopPlugin] NPCs criados automaticamente no início do servidor."
+  searching_top_auto: "Nenhum NPC salvo encontrado — buscando top3 para spawn automático."
+  npcs_created_auto: "NPCs criados automaticamente no início do servidor."
 
   error_load_npcs: "Erro ao carregar NPCs no onEnable: {error}"
   error_remove_npcs: "Erro ao remover NPCs no onDisable: {error}"
   error_startup_npcs: "Erro ao criar NPCs no startup: {error}"
 
-  citizens_not_detected: "&e[CentralCartTopPlugin] Citizens não detectado no momento do carregamento de NPCs."
+  citizens_not_detected: "Citizens não detectado no momento do carregamento de NPCs."
   error_fetch_startup: "Erro ao buscar top3 no startup: {error}"
-  no_top3_startup: "&e[CentralCartTopPlugin] Não foi possível obter top3 no startup para spawn automático."
+  no_top3_startup: "Não foi possível obter top3 no startup para spawn automático."
 
 # ====================================
 # SISTEMA DE NPCs
@@ -258,9 +258,9 @@ logs:
 npcs:
   loading: "NPC carregado e spawnado: {name} (posição {position})"
   already_spawned: "NPC já estava spawnado: {name} (posição {position})"
-  loaded_success: "&a[CentralCart] {count} NPC(s) carregado(s) com sucesso!"
+  loaded_success: "{count} NPC(s) carregado(s) com sucesso!"
   not_found: "NPC salvo (ID: {id}) não encontrado na posição {position}"
-  missing_removed: "&e[CentralCart] {count} NPC(s) não encontrado(s) e foram removidos da lista."
+  missing_removed: "{count} NPC(s) não encontrado(s) e foram removidos da lista."
 
   updating: "Atualizando NPC na posição {position} para {player}"
   creating: "Criando novo NPC na posição {position} para {player}"
@@ -281,13 +281,13 @@ npcs:
 # SISTEMA DE CACHE
 # ====================================
 cache:
-  updated: "&a[Cache] Dados atualizados (válido por {duration} minutos)"
-  using: "&a[Cache] Usando dados em cache (válido por mais {remaining} minutos)"
-  invalidated: "&e[Cache] Cache invalidado manualmente"
+  updated: "Dados atualizados (válido por {duration} minutos)"
+  using: "Usando dados em cache (válido por mais {remaining} minutos)"
+  invalidated: "Cache invalidado manualmente"
 
-  fallback_timeout: "&e[Cache] Retornando dados em cache antigos devido a erro na API"
-  fallback_connection: "&e[Cache] Retornando dados em cache antigos devido a erro de conexão"
-  fallback_error: "&e[Cache] Retornando dados em cache antigos devido a erro"
+  fallback_timeout: "Retornando dados em cache antigos devido a erro na API"
+  fallback_connection: "Retornando dados em cache antigos devido a erro de conexão"
+  fallback_error: "Retornando dados em cache antigos devido a erro"
 
 # ====================================
 # API / REQUISIÇÕES
