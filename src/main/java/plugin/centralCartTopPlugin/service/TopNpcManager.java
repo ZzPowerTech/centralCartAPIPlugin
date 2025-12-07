@@ -20,25 +20,27 @@ import java.util.logging.Logger;
 public class TopNpcManager {
 
     private final Logger logger;
-    private final FileConfiguration config;
+    private FileConfiguration config; // tornamos não-final para permitir reload
     private final Map<Integer, Integer> npcIds; // posição -> NPC ID
+    private final Map<String, Location> locationCache; // Cache de localizações parseadas
 
     public TopNpcManager(Logger logger, FileConfiguration config) {
         this.logger = logger;
         this.config = config;
         this.npcIds = new HashMap<>();
+        this.locationCache = new HashMap<>();
 
         // Carrega IDs salvos dos NPCs
         loadNpcIds();
 
-        // Carrega NPCs existentes na inicialização
-        loadExistingNPCs();
+        // NÃO carregamos os NPCs aqui para evitar problemas com Citizens ainda não inicializado.
+        // A carga dos NPCs será feita explicitamente pelo plugin quando for seguro (onEnable).
     }
 
     /**
-     * Carrega e valida NPCs existentes na inicialização
+     * Carrega e valida NPCs existentes na inicialização (síncrono) - público para ser chamado pelo plugin
      */
-    private void loadExistingNPCs() {
+    public void loadExistingNPCs() {
         if (!isCitizensEnabled()) {
             return;
         }
@@ -68,6 +70,8 @@ public class TopNpcManager {
                     loaded++;
                 } else if (location != null && npc.isSpawned()) {
                     logger.info("NPC já estava spawnado: " + npc.getName() + " (posição " + position + ")");
+                    // Mesmo se já estiver spawnado, podemos teleportá-lo caso a localização tenha sido alterada
+                    npc.teleport(location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
                     loaded++;
                 }
             } else {
@@ -114,7 +118,7 @@ public class TopNpcManager {
                 updateOrCreateNPC(registry, customer);
             } catch (Exception e) {
                 logger.severe("Erro ao atualizar/criar NPC para " + customer.getName() + ": " + e.getMessage());
-                e.printStackTrace();
+                logger.log(java.util.logging.Level.SEVERE, "Stack trace:", e);
             }
         }
 
@@ -187,13 +191,117 @@ public class TopNpcManager {
             skinTrait.setSkinName(customer.getName());
 
             // Spawn do NPC
-            npc.spawn(location);
+            try {
+                npc.spawn(location);
 
-            // Salva o ID do NPC
-            npcIds.put(position, npc.getId());
+                // Salva o ID do NPC
+                npcIds.put(position, npc.getId());
 
-            logger.info("NPC criado: " + displayName + " na posição " + formatLocation(location));
+                logger.info("NPC criado: " + displayName + " na posição " + formatLocation(location));
+            } catch (Exception e) {
+                logger.severe("Erro ao spawnar NPC: " + e.getMessage());
+                logger.log(java.util.logging.Level.SEVERE, "Stack trace:", e);
+            }
         }
+    }
+
+    /**
+     * Converte número da posição para key do config
+     */
+    private String getPositionKey(int position) {
+        switch (position) {
+            case 1:
+                return "first";
+            case 2:
+                return "second";
+            case 3:
+                return "third";
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Formata localização para log
+     */
+    private String formatLocation(Location loc) {
+        return String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ());
+    }
+
+    /**
+     * Obtém a localização do config (com cache para performance)
+     */
+    private Location getLocationFromConfig(String positionKey) {
+        // Verifica se está em cache
+        if (locationCache.containsKey(positionKey)) {
+            return locationCache.get(positionKey).clone();
+        }
+
+        ConfigurationSection locationSection = config.getConfigurationSection("npcs.locations." + positionKey);
+
+        if (locationSection == null) {
+            return null;
+        }
+
+        String worldName = locationSection.getString("world", "world");
+        double x = locationSection.getDouble("x", 0.0);
+        double y = locationSection.getDouble("y", 64.0);
+        double z = locationSection.getDouble("z", 0.0);
+        float yaw = (float) locationSection.getDouble("yaw", 0.0);
+        float pitch = (float) locationSection.getDouble("pitch", 0.0);
+
+        org.bukkit.World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            logger.warning("Mundo não encontrado: " + worldName);
+            return null;
+        }
+
+        Location location = new Location(world, x, y, z, yaw, pitch);
+
+        // Armazena em cache
+        locationCache.put(positionKey, location.clone());
+
+        return location;
+    }
+
+    /**
+     * Carrega os IDs dos NPCs salvos no config
+     */
+    private void loadNpcIds() {
+        if (config.contains("npcs.saved_ids")) {
+            ConfigurationSection idsSection = config.getConfigurationSection("npcs.saved_ids");
+            if (idsSection != null) {
+                for (String key : idsSection.getKeys(false)) {
+                    try {
+                        int position = Integer.parseInt(key);
+                        int npcId = idsSection.getInt(key);
+                        npcIds.put(position, npcId);
+                        logger.info("NPC ID carregado: posição " + position + " -> ID " + npcId);
+                    } catch (NumberFormatException e) {
+                        logger.warning("Chave inválida no saved_ids: " + key);
+                        logger.log(java.util.logging.Level.WARNING, "Stack trace:", e);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Salva os IDs dos NPCs no config
+     */
+    private void saveNpcIds() {
+        // Limpa seção antiga para evitar dados órfãos
+        config.set("npcs.saved_ids", null);
+        for (Map.Entry<Integer, Integer> entry : npcIds.entrySet()) {
+            config.set("npcs.saved_ids." + entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Retorna os IDs dos NPCs ativos
+     */
+    public Map<Integer, Integer> getNpcIds() {
+        return new HashMap<>(npcIds);
     }
 
     /**
@@ -226,89 +334,15 @@ public class TopNpcManager {
     }
 
     /**
-     * Obtém a localização do config
+     * Recarrega a configuração do manager (para ser chamado durante reload do plugin)
      */
-    private Location getLocationFromConfig(String positionKey) {
-        ConfigurationSection locationSection = config.getConfigurationSection("npcs.locations." + positionKey);
-
-        if (locationSection == null) {
-            return null;
-        }
-
-        String worldName = locationSection.getString("world", "world");
-        double x = locationSection.getDouble("x", 0.0);
-        double y = locationSection.getDouble("y", 64.0);
-        double z = locationSection.getDouble("z", 0.0);
-        float yaw = (float) locationSection.getDouble("yaw", 0.0);
-        float pitch = (float) locationSection.getDouble("pitch", 0.0);
-
-        org.bukkit.World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            logger.warning("Mundo não encontrado: " + worldName);
-            return null;
-        }
-
-        return new Location(world, x, y, z, yaw, pitch);
+    public void reload(FileConfiguration newConfig) {
+        this.config = newConfig;
+        this.npcIds.clear();
+        this.locationCache.clear(); // Limpa cache de localizações
+        loadNpcIds();
+        // Carrega/spawna NPCs com base nos IDs carregados (chamado de forma síncrona pelo plugin)
+        loadExistingNPCs();
     }
 
-    /**
-     * Converte número da posição para key do config
-     */
-    private String getPositionKey(int position) {
-        switch (position) {
-            case 1:
-                return "first";
-            case 2:
-                return "second";
-            case 3:
-                return "third";
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * Formata localização para log
-     */
-    private String formatLocation(Location loc) {
-        return String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ());
-    }
-
-    /**
-     * Carrega os IDs dos NPCs salvos no config
-     */
-    private void loadNpcIds() {
-        if (config.contains("npcs.saved_ids")) {
-            ConfigurationSection idsSection = config.getConfigurationSection("npcs.saved_ids");
-            if (idsSection != null) {
-                for (String key : idsSection.getKeys(false)) {
-                    try {
-                        int position = Integer.parseInt(key);
-                        int npcId = idsSection.getInt(key);
-                        npcIds.put(position, npcId);
-                        logger.info("NPC ID carregado: posição " + position + " -> ID " + npcId);
-                    } catch (NumberFormatException e) {
-                        logger.warning("Chave inválida no saved_ids: " + key);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Salva os IDs dos NPCs no config
-     */
-    private void saveNpcIds() {
-        for (Map.Entry<Integer, Integer> entry : npcIds.entrySet()) {
-            config.set("npcs.saved_ids." + entry.getKey(), entry.getValue());
-        }
-    }
-
-    /**
-     * Retorna os IDs dos NPCs ativos
-     */
-    public Map<Integer, Integer> getNpcIds() {
-        return new HashMap<>(npcIds);
-    }
 }
-

@@ -6,6 +6,7 @@ api:
   timeout: 15000 # Timeout em milissegundos (15 segundos)
   retry_attempts: 3 # Número de tentativas em caso de falha
   retry_delay: 2000 # Delay entre tentativas em milissegundos (2 segundos)
+  cache_duration_minutes: 30 # Duração do cache em minutos (otimização de performance)
   # IMPORTANTE: Nunca compartilhe este token publicamente!
   # Obtenha seu token em: https://centralcart.com.br
   token: "COLOQUE_SEU_TOKEN_AQUI"
@@ -32,6 +33,7 @@ medals:
 # Configuração dos NPCs (requer Citizens)
 npcs:
   enabled: true # Ativar criação automática de NPCs
+  auto_spawn_on_start: true # Spawnar NPCs automaticamente quando o servidor iniciar (se não houver NPCs salvos)
   auto_update_enabled: true # Atualizar NPCs automaticamente todo dia 1º do mês
   # ATENÇÃO: Os NPCs são reutilizados! Ao executar /spawntopnpcs:
   # - NPCs existentes serão movidos e atualizados

@@ -34,3 +34,13 @@ commands:
     usage: /scheduleinfo
     permission: centralcart.admin
     aliases: [infoatualizacao, schedulestat]
+  testrewards:
+    description: Testa o sistema de recompensas dos top doadores
+    usage: /testrewards
+    permission: centralcart.admin
+    aliases: [testarrecompensas, testreward]
+  cacheinfo:
+    description: Mostra informações sobre o cache da API
+    usage: /cacheinfo [clear]
+    permission: centralcart.admin
+    aliases: [cache, infocache]

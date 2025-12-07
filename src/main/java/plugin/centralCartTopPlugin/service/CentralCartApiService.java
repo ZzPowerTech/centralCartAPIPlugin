@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.bukkit.configuration.file.FileConfiguration;
+import plugin.centralCartTopPlugin.cache.TopDonatorsCache;
 import plugin.centralCartTopPlugin.model.TopCustomer;
 
 import java.io.BufferedReader;
@@ -28,6 +29,7 @@ public class CentralCartApiService {
     private final String authToken;
     private final int retryAttempts;
     private final int retryDelay;
+    private final TopDonatorsCache cache;
 
     public CentralCartApiService(Logger logger, FileConfiguration config) {
         this.gson = new Gson();
@@ -37,6 +39,10 @@ public class CentralCartApiService {
         this.authToken = config.getString("api.token", "");
         this.retryAttempts = config.getInt("api.retry_attempts", 3);
         this.retryDelay = config.getInt("api.retry_delay", 2000);
+
+        // Inicializa cache com duração configurável (padrão: 30 minutos)
+        long cacheDuration = config.getLong("api.cache_duration_minutes", 30);
+        this.cache = new TopDonatorsCache(cacheDuration);
 
         // Validar se o token foi configurado
         if (authToken.isEmpty() || authToken.equals("COLOQUE_SEU_TOKEN_AQUI")) {
@@ -48,9 +54,24 @@ public class CentralCartApiService {
     }
 
     /**
-     * Busca os top 3 doadores do mês anterior de forma assíncrona
+     * Busca os top 3 doadores do mês anterior de forma assíncrona com cache
      */
     public CompletableFuture<List<TopCustomer>> getTop3DonatorsPreviousMonth() {
+        return getTop3DonatorsPreviousMonth(false);
+    }
+
+    /**
+     * Busca os top 3 doadores do mês anterior com opção de forçar atualização
+     *
+     * @param forceRefresh Se true, ignora o cache e busca dados novos
+     */
+    public CompletableFuture<List<TopCustomer>> getTop3DonatorsPreviousMonth(boolean forceRefresh) {
+        // Verifica se pode usar cache
+        if (!forceRefresh && cache.isValid()) {
+            logger.info("§a[Cache] Usando dados em cache (válido por mais " + cache.getRemainingValidityMinutes() + " minutos)");
+            return CompletableFuture.completedFuture(cache.getData());
+        }
+
         return CompletableFuture.supplyAsync(() -> {
             // Calcula o mês anterior
             YearMonth lastMonth = YearMonth.now().minusMonths(1);
@@ -78,6 +99,12 @@ public class CentralCartApiService {
                         top3.add(allCustomers.get(i));
                     }
 
+                    // Atualiza o cache
+                    if (!top3.isEmpty()) {
+                        cache.update(top3);
+                        logger.info("§a[Cache] Dados atualizados (válido por 30 minutos)");
+                    }
+
                     return top3;
 
                 } catch (java.net.SocketTimeoutException e) {
@@ -86,6 +113,12 @@ public class CentralCartApiService {
                         logger.severe("Erro de timeout após " + retryAttempts + " tentativas!");
                         logger.severe("A API demorou mais que " + (timeout / 1000) + " segundos para responder.");
                         logger.severe("Tente aumentar o timeout em config.yml: api.timeout");
+
+                        // Em caso de erro, retorna cache antigo se disponível
+                        if (cache.hasData()) {
+                            logger.warning("§e[Cache] Retornando dados em cache antigos devido a erro na API");
+                            return cache.getData();
+                        }
                     } else {
                         try {
                             Thread.sleep(retryDelay);
@@ -96,12 +129,23 @@ public class CentralCartApiService {
                 } catch (java.net.UnknownHostException e) {
                     logger.severe("Erro: Não foi possível conectar à API CentralCart");
                     logger.severe("Verifique sua conexão com a internet");
+
+                    // Retorna cache se disponível
+                    if (cache.hasData()) {
+                        logger.warning("§e[Cache] Retornando dados em cache antigos devido a erro de conexão");
+                        return cache.getData();
+                    }
                     break; // Não tenta novamente em caso de erro de DNS
                 } catch (Exception e) {
                     logger.warning("Erro na tentativa " + attempt + ": " + e.getMessage());
                     if (attempt == retryAttempts) {
                         logger.severe("Erro ao buscar top doadores após " + retryAttempts + " tentativas: " + e.getMessage());
-                        e.printStackTrace();
+
+                        // Retorna cache se disponível
+                        if (cache.hasData()) {
+                            logger.warning("§e[Cache] Retornando dados em cache antigos devido a erro");
+                            return cache.getData();
+                        }
                     } else {
                         try {
                             Thread.sleep(retryDelay);
@@ -114,6 +158,29 @@ public class CentralCartApiService {
 
             return new ArrayList<>();
         });
+    }
+
+    /**
+     * Invalida o cache forçando uma nova busca na próxima chamada
+     */
+    public void invalidateCache() {
+        cache.invalidate();
+        logger.info("§e[Cache] Cache invalidado manualmente");
+    }
+
+    /**
+     * Obtém informações sobre o estado do cache
+     */
+    public String getCacheInfo() {
+        if (!cache.hasData()) {
+            return "§cCache vazio";
+        }
+
+        if (cache.isValid()) {
+            return "§aCache válido (expira em " + cache.getRemainingValidityMinutes() + " minutos)";
+        } else {
+            return "§eCache expirado (última atualização há " + cache.getMinutesSinceLastUpdate() + " minutos)";
+        }
     }
 
     /**
