@@ -44,3 +44,8 @@ commands:
     usage: /cacheinfo [clear]
     permission: centralcart.admin
     aliases: [cache, infocache]
+  messages:
+    description: Gerencia o sistema de mensagens do plugin
+    usage: /messages [reload|clear]
+    permission: centralcart.admin
+    aliases: [msgs, mensagens]

@@ -5,37 +5,35 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
+import plugin.centralCartTopPlugin.manager.MessagesManager;
 import plugin.centralCartTopPlugin.model.TopCustomer;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class TopDonadoresCommand implements CommandExecutor {
 
     private final CentralCartTopPlugin plugin;
+    private final MessagesManager messages;
 
     public TopDonadoresCommand(CentralCartTopPlugin plugin) {
         this.plugin = plugin;
+        this.messages = plugin.getMessagesManager();
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        // Mensagem de carregamento configurável (sempre busca da config atual)
-        String loadingMsg = plugin.getConfig().getString("messages.loading", "§e§l[CentralCart] §aBuscando top doadores...");
-        sender.sendMessage(loadingMsg);
+        sender.sendMessage(messages.getMessageWithPrefix("top_donators.loading"));
 
         plugin.getApiService().getTop3DonatorsPreviousMonth().thenAccept(top3 -> {
             if (top3.isEmpty()) {
-                String errorMsg = plugin.getConfig().getString("messages.error", "§c§l[CentralCart] §cNão foi possível buscar os dados.");
-                sender.sendMessage(errorMsg);
+                sender.sendMessage(messages.getMessageWithPrefix("top_donators.error"));
                 return;
             }
 
-            // Mensagens configuráveis do header
-            String header = plugin.getConfig().getString("messages.header", "§6§l========================================");
-            String title = plugin.getConfig().getString("messages.title", "§e§l      TOP 3 DOADORES DO MÊS ANTERIOR");
-            String footer = plugin.getConfig().getString("messages.footer", "§6§l========================================");
-
-            sender.sendMessage(header);
-            sender.sendMessage(title);
-            sender.sendMessage(header);
+            sender.sendMessage(messages.getMessage("top_donators.header"));
+            sender.sendMessage(messages.getMessage("top_donators.title"));
+            sender.sendMessage(messages.getMessage("top_donators.header"));
             sender.sendMessage("");
 
             // Configurações de exibição
@@ -45,27 +43,24 @@ public class TopDonadoresCommand implements CommandExecutor {
             for (TopCustomer customer : top3) {
                 String medal = getMedal(customer.getPosition());
 
-                if (showTotal) {
-                    sender.sendMessage(String.format("§f%s §6#%d §f- §e%s §7(%s %.2f)",
-                            medal,
-                            customer.getPosition(),
-                            customer.getName(),
-                            currencySymbol,
-                            customer.getTotal()));
-                } else {
-                    sender.sendMessage(String.format("§f%s §6#%d §f- §e%s",
-                            medal,
-                            customer.getPosition(),
-                            customer.getName()));
-                }
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("medal", medal);
+                placeholders.put("position", String.valueOf(customer.getPosition()));
+                placeholders.put("player", customer.getName());
+                placeholders.put("currency", currencySymbol);
+                placeholders.put("total", String.format("%.2f", customer.getTotal()));
+
+                String format = showTotal ? "top_donators.format_with_total" : "top_donators.format_without_total";
+                sender.sendMessage(messages.getMessage(format, placeholders));
             }
 
             sender.sendMessage("");
-            sender.sendMessage(footer);
+            sender.sendMessage(messages.getMessage("top_donators.footer"));
 
         }).exceptionally(throwable -> {
-            String errorMsg = plugin.getConfig().getString("messages.error", "§c§l[CentralCart] §cErro ao buscar dados.");
-            sender.sendMessage(errorMsg + " " + throwable.getMessage());
+            Map<String, String> errorPlaceholders = new HashMap<>();
+            errorPlaceholders.put("message", throwable.getMessage());
+            sender.sendMessage(messages.getMessageWithPrefix("top_donators.error_with_message", errorPlaceholders));
             return null;
         });
 
@@ -73,21 +68,16 @@ public class TopDonadoresCommand implements CommandExecutor {
     }
 
     private String getMedal(int position) {
-        String medal;
         switch (position) {
             case 1:
-                medal = plugin.getConfig().getString("medals.first", "§6🥇");
-                break;
+                return messages.getMessage("top_donators.medals.first");
             case 2:
-                medal = plugin.getConfig().getString("medals.second", "§7🥈");
-                break;
+                return messages.getMessage("top_donators.medals.second");
             case 3:
-                medal = plugin.getConfig().getString("medals.third", "§c🥉");
-                break;
+                return messages.getMessage("top_donators.medals.third");
             default:
-                medal = "§f";
+                return "§f";
         }
-        return medal;
     }
 }
 

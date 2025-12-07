@@ -5,23 +5,29 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
+import plugin.centralCartTopPlugin.manager.MessagesManager;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ReloadCommand implements CommandExecutor {
 
     private final CentralCartTopPlugin plugin;
+    private final MessagesManager messages;
 
     public ReloadCommand(CentralCartTopPlugin plugin) {
         this.plugin = plugin;
+        this.messages = plugin.getMessagesManager();
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("centralcart.admin")) {
-            sender.sendMessage("§c§l[CentralCart] §cVocê não tem permissão para usar este comando.");
+            sender.sendMessage(messages.getMessageWithPrefix("general.no_permission"));
             return true;
         }
 
-        sender.sendMessage("§e§l[CentralCart] §eRecarregando configurações...");
+        sender.sendMessage(messages.getMessageWithPrefix("reload.reloading"));
 
         try {
             // Recarrega o config.yml
@@ -35,14 +41,37 @@ public class ReloadCommand implements CommandExecutor {
                 plugin.getRewardsManager().reload();
             }
 
-            sender.sendMessage("§a§l[CentralCart] §aConfiguração recarregada com sucesso!");
-            sender.sendMessage("§a§l[CentralCart] §aToken: " + (plugin.getConfig().getString("api.token", "").equals("COLOQUE_SEU_TOKEN_AQUI") ? "§c[NÃO CONFIGURADO]" : "§a[CONFIGURADO]"));
-            sender.sendMessage("§a§l[CentralCart] §aNPCs: " + (plugin.getConfig().getBoolean("npcs.enabled", true) ? "§a[ATIVADO]" : "§c[DESATIVADO]"));
-            sender.sendMessage("§a§l[CentralCart] §aCitizens: " + (plugin.getNpcManager().isCitizensEnabled() ? "§a[DETECTADO]" : "§c[NÃO ENCONTRADO]"));
-            sender.sendMessage("§a§l[CentralCart] §aRecompensas: " + (plugin.getRewardsManager() != null && plugin.getRewardsManager().isEnabled() ? "§a[ATIVADO]" : "§c[DESATIVADO]"));
+            sender.sendMessage(messages.getMessageWithPrefix("reload.success"));
+
+            // Informações de status
+            Map<String, String> tokenStatus = new HashMap<>();
+            tokenStatus.put("status", plugin.getConfig().getString("api.token", "").equals("COLOQUE_SEU_TOKEN_AQUI")
+                ? messages.getMessage("reload.status_not_configured")
+                : messages.getMessage("reload.status_configured"));
+            sender.sendMessage(messages.getMessageWithPrefix("reload.info_token", tokenStatus));
+
+            Map<String, String> npcsStatus = new HashMap<>();
+            npcsStatus.put("status", plugin.getConfig().getBoolean("npcs.enabled", true)
+                ? messages.getMessage("reload.status_enabled")
+                : messages.getMessage("reload.status_disabled"));
+            sender.sendMessage(messages.getMessageWithPrefix("reload.info_npcs", npcsStatus));
+
+            Map<String, String> citizensStatus = new HashMap<>();
+            citizensStatus.put("status", plugin.getNpcManager().isCitizensEnabled()
+                ? messages.getMessage("reload.status_detected")
+                : messages.getMessage("reload.status_not_found"));
+            sender.sendMessage(messages.getMessageWithPrefix("reload.info_citizens", citizensStatus));
+
+            Map<String, String> rewardsStatus = new HashMap<>();
+            rewardsStatus.put("status", (plugin.getRewardsManager() != null && plugin.getRewardsManager().isEnabled())
+                ? messages.getMessage("reload.status_enabled")
+                : messages.getMessage("reload.status_disabled"));
+            sender.sendMessage(messages.getMessageWithPrefix("reload.info_rewards", rewardsStatus));
 
         } catch (Exception e) {
-            sender.sendMessage("§c§l[CentralCart] §cErro ao recarregar: " + e.getMessage());
+            Map<String, String> errorPlaceholders = new HashMap<>();
+            errorPlaceholders.put("error", e.getMessage());
+            sender.sendMessage(messages.getMessageWithPrefix("reload.error", errorPlaceholders));
             plugin.getLogger().severe("Erro ao recarregar plugin: " + e.getMessage());
             e.printStackTrace();
         }

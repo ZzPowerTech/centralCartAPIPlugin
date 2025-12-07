@@ -3,6 +3,7 @@ package plugin.centralCartTopPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import plugin.centralCartTopPlugin.command.CacheInfoCommand;
+import plugin.centralCartTopPlugin.command.MessagesCommand;
 import plugin.centralCartTopPlugin.command.ReloadCommand;
 import plugin.centralCartTopPlugin.command.RemoveTopNpcsCommand;
 import plugin.centralCartTopPlugin.command.ScheduleInfoCommand;
@@ -11,6 +12,7 @@ import plugin.centralCartTopPlugin.command.TestRewardsCommand;
 import plugin.centralCartTopPlugin.command.TestScheduleCommand;
 import plugin.centralCartTopPlugin.command.TopDonadoresCommand;
 import plugin.centralCartTopPlugin.listener.PlayerJoinListener;
+import plugin.centralCartTopPlugin.manager.MessagesManager;
 import plugin.centralCartTopPlugin.service.CentralCartApiService;
 import plugin.centralCartTopPlugin.service.RewardsManager;
 import plugin.centralCartTopPlugin.service.TopNpcManager;
@@ -24,6 +26,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     private TopNpcManager npcManager;
     private RewardsManager rewardsManager;
     private MonthlyNpcUpdateTask monthlyUpdateTask;
+    private MessagesManager messagesManager;
 
     @Override
     public void onEnable() {
@@ -31,6 +34,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
         // Salva o config.yml padrão se não existir
         saveDefaultConfig();
+
+        // Inicializa o gerenciador de mensagens PRIMEIRO
+        messagesManager = new MessagesManager(this);
 
         // Inicializa os serviços
         initializeServices();
@@ -144,6 +150,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         getCommand("scheduleinfo").setExecutor(new ScheduleInfoCommand(this));
         getCommand("testrewards").setExecutor(new TestRewardsCommand(this));
         getCommand("cacheinfo").setExecutor(new CacheInfoCommand(this));
+        getCommand("messages").setExecutor(new MessagesCommand(this));
     }
 
     /**
@@ -184,6 +191,11 @@ public final class CentralCartTopPlugin extends JavaPlugin {
             monthlyUpdateTask.cancel();
         }
 
+        // Recarrega mensagens
+        if (messagesManager != null) {
+            messagesManager.reload();
+        }
+
         // Recria o serviço da API (para pegar novo token/config)
         apiService = new CentralCartApiService(getLogger(), getConfig());
 
@@ -220,5 +232,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
     public RewardsManager getRewardsManager() {
         return rewardsManager;
+    }
+
+    public MessagesManager getMessagesManager() {
+        return messagesManager;
     }
 }
