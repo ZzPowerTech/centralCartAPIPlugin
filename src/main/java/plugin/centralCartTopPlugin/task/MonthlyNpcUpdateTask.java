@@ -71,7 +71,8 @@ public class MonthlyNpcUpdateTask extends BukkitRunnable {
                     plugin.getLogger().info("§a[CentralCart] Novos top doadores:");
 
                     for (TopCustomer customer : top3) {
-                        plugin.getLogger().info("§a  " + customer.getPosition() + "º - " + customer.getName() + " (R$ " + customer.getTotal() + ")");
+                        plugin.getLogger().log(java.util.logging.Level.INFO, "§a  {0}º - {1} (R$ {2})", 
+                            new Object[]{customer.getPosition(), customer.getName(), customer.getTotal()});
                     }
 
                     // Distribui recompensas
@@ -84,11 +85,11 @@ public class MonthlyNpcUpdateTask extends BukkitRunnable {
                     notifyAdmins(top3);
 
                 } catch (Exception e) {
-                    plugin.getLogger().severe("§c[CentralCart] Erro na atualização automática de NPCs: " + e.getMessage());
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE, "§c[CentralCart] Erro na atualização automática de NPCs", e);
                 }
             });
         }).exceptionally(throwable -> {
-            plugin.getLogger().severe("§c[CentralCart] Erro ao buscar dados para atualização automática: " + throwable.getMessage());
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "§c[CentralCart] Erro ao buscar dados para atualização automática", throwable);
             return null;
         });
     }

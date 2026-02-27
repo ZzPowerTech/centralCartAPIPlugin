@@ -63,7 +63,7 @@ public class RewardsManager {
                     logger.warning("§c[Rewards] Não foi possível criar arquivo de recompensas pendentes.");
                 }
             } catch (IOException e) {
-                logger.severe("§c[Rewards] Erro ao criar arquivo de recompensas pendentes: " + e.getMessage());
+                logger.log(Level.SEVERE, "§c[Rewards] Erro ao criar arquivo de recompensas pendentes", e);
             }
         }
 
@@ -121,7 +121,7 @@ public class RewardsManager {
         } else {
             // Jogador offline, salva para entregar quando logar
             savePendingReward(playerName, position, month);
-            logger.info("§e[Rewards] Recompensa salva para " + playerName + " (offline)");
+            logger.log(Level.INFO, "§e[Rewards] Recompensa salva para {0} (offline)", playerName);
         }
     }
 
@@ -161,7 +161,7 @@ public class RewardsManager {
             player.sendMessage(formatted);
         }
 
-        logger.info("§a[Rewards] Recompensas entregues para " + player.getName() + " (" + positionName + " lugar)");
+        logger.log(Level.INFO, "§a[Rewards] Recompensas entregues para {0} ({1} lugar)", new Object[]{player.getName(), positionName});
     }
 
     /**
@@ -223,14 +223,14 @@ public class RewardsManager {
         try {
             String materialName = (String) config.get("material");
             if (materialName == null) {
-                logger.warning("§c" + Constants.REWARDS_PREFIX + " Material não especificado no item");
+                logger.log(Level.WARNING, "§c" + Constants.REWARDS_PREFIX + " Material não especificado no item");
                 return null;
             }
 
             Material material = Material.getMaterial(materialName);
 
             if (material == null) {
-                logger.warning("§c" + Constants.REWARDS_PREFIX + " Material inválido: " + materialName);
+                logger.log(Level.WARNING, "§c" + Constants.REWARDS_PREFIX + " Material inválido: {0}", materialName);
                 return null;
             }
 
@@ -239,7 +239,7 @@ public class RewardsManager {
             ItemMeta meta = item.getItemMeta();
 
             if (meta == null) {
-                logger.warning("§c" + Constants.REWARDS_PREFIX + " ItemMeta é null para material: " + materialName);
+                logger.log(Level.WARNING, "§c" + Constants.REWARDS_PREFIX + " ItemMeta é null para material: {0}", materialName);
                 return item; // Retorna o item sem meta
             }
 
@@ -276,10 +276,10 @@ public class RewardsManager {
                                 if (enchantment != null) {
                                     meta.addEnchant(enchantment, level, true);
                                 } else {
-                                    logger.warning("§c" + Constants.REWARDS_PREFIX + " Encantamento desconhecido: " + parts[0]);
+                                    logger.log(Level.WARNING, "§c" + Constants.REWARDS_PREFIX + " Encantamento desconhecido: {0}", parts[0]);
                                 }
                             } catch (NumberFormatException e) {
-                                logger.warning("§c" + Constants.REWARDS_PREFIX + " Nível de encantamento inválido: " + parts[1]);
+                                logger.log(Level.WARNING, "§c" + Constants.REWARDS_PREFIX + " Nível de encantamento inválido: {0}", parts[1]);
                             }
                         }
                     }
@@ -325,7 +325,7 @@ public class RewardsManager {
         try {
             pendingRewardsData.save(pendingRewardsFile);
         } catch (IOException e) {
-            logger.severe("§c[Rewards] Erro ao salvar recompensa pendente: " + e.getMessage());
+            logger.log(Level.SEVERE, "§c[Rewards] Erro ao salvar recompensa pendente", e);
         }
     }
 

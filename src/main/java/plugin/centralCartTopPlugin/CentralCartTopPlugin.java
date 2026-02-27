@@ -66,15 +66,14 @@ public final class CentralCartTopPlugin extends JavaPlugin {
                                         saveConfig();
                                         getLogger().info("§a" + Constants.LOG_PREFIX + " NPCs criados automaticamente no início do servidor.");
                                     } catch (Exception ex) {
-                                        getLogger().severe("Erro ao criar NPCs no startup: " + ex.getMessage());
-                                        getLogger().log(Level.SEVERE, "Stack trace:", ex);
+                                        getLogger().log(Level.SEVERE, "Erro ao criar NPCs no startup", ex);
                                     }
                                 });
                             } else {
                                 getLogger().warning("§e" + Constants.LOG_PREFIX + " Não foi possível obter top3 no startup para spawn automático.");
                             }
                         }).exceptionally(t -> {
-                            getLogger().severe("Erro ao buscar top3 no startup: " + t.getMessage());
+                            getLogger().log(Level.SEVERE, "Erro ao buscar top3 no startup", t);
                             return null;
                         });
                     }
@@ -83,8 +82,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
                     getLogger().warning("§e" + Constants.LOG_PREFIX + " Citizens não detectado no momento do carregamento de NPCs.");
                 }
             } catch (Exception e) {
-                getLogger().severe("Erro ao carregar NPCs no onEnable: " + e.getMessage());
-                getLogger().log(Level.SEVERE, "Stack trace:", e);
+                getLogger().log(Level.SEVERE, "Erro ao carregar NPCs no onEnable", e);
             }
         }, Constants.STARTUP_DELAY_TICKS);
 
@@ -92,7 +90,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         startMonthlyUpdateTask();
 
         getLogger().info("§a[CentralCartTopPlugin] Comandos registrados!");
-        getLogger().info("§a[CentralCartTopPlugin] API URL: " + getConfig().getString("api.url"));
+        getLogger().log(Level.INFO, "§a[CentralCartTopPlugin] API URL: {0}", getConfig().getString("api.url"));
     }
 
     @Override
@@ -109,8 +107,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
                 // Salva config para persistir remoção
                 saveConfig();
             } catch (Exception e) {
-                getLogger().severe("Erro ao remover NPCs no onDisable: " + e.getMessage());
-                getLogger().log(Level.SEVERE, "Stack trace:", e);
+                getLogger().log(Level.SEVERE, "Erro ao remover NPCs no onDisable", e);
             }
         }
 

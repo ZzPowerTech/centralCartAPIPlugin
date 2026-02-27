@@ -93,7 +93,7 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
                     Map<String, String> errorPlaceholders = new HashMap<>();
                     errorPlaceholders.put("error", e.getMessage());
                     sender.sendMessage(messages.getMessageWithPrefix("spawn_npcs.error_create", errorPlaceholders));
-                    plugin.getLogger().severe("Erro ao criar NPCs: " + e.getMessage());
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE, "Erro ao criar NPCs", e);
                 }
             });
         }).exceptionally(throwable -> {

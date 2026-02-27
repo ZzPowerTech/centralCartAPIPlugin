@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -78,6 +79,11 @@ public class MessagesManager {
     public String getMessage(String path, Map<String, String> placeholders) {
         // Busca mensagem base do config (ou cache simples)
         String message = messagesConfig.getString(path, "§cMensagem não encontrada: " + path);
+        
+        // Garante que message não é null
+        if (message == null) {
+            message = "§cMensagem não encontrada: " + path;
+        }
 
         // Substitui placeholders
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
@@ -169,7 +175,7 @@ public class MessagesManager {
         try {
             messagesConfig.save(messagesFile);
         } catch (IOException e) {
-            logger.severe("Erro ao salvar messages.yml: " + e.getMessage());
+            logger.log(Level.SEVERE, "Erro ao salvar messages.yml", e);
         }
     }
 

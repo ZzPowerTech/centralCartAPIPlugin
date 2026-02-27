@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
@@ -68,26 +69,26 @@ public class TopNpcManager {
 
                 if (location != null && !npc.isSpawned()) {
                     npc.spawn(location);
-                    logger.info("NPC carregado e spawnado: " + npc.getName() + " (posição " + position + ")");
+                    logger.log(Level.INFO, "NPC carregado e spawnado: {0} (posição {1})", new Object[]{npc.getName(), position});
                     loaded++;
                 } else if (location != null && npc.isSpawned()) {
-                    logger.info("NPC já estava spawnado: " + npc.getName() + " (posição " + position + ")");
+                    logger.log(Level.INFO, "NPC já estava spawnado: {0} (posição {1})", new Object[]{npc.getName(), position});
                     // Mesmo se já estiver spawnado, podemos teleportá-lo caso a localização tenha sido alterada
                     npc.teleport(location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
                     loaded++;
                 }
             } else {
-                logger.warning("NPC salvo (ID: " + npcId + ") não encontrado na posição " + position);
+                logger.log(Level.WARNING, "NPC salvo (ID: {0}) não encontrado na posição {1}", new Object[]{npcId, position});
                 npcIds.remove(position);
                 missing++;
             }
         }
 
         if (loaded > 0) {
-            logger.info("§a[CentralCart] " + loaded + " NPC(s) carregado(s) com sucesso!");
+            logger.log(Level.INFO, "§a[CentralCart] {0} NPC(s) carregado(s) com sucesso!", loaded);
         }
         if (missing > 0) {
-            logger.warning("§e[CentralCart] " + missing + " NPC(s) não encontrado(s) e foram removidos da lista.");
+            logger.log(Level.WARNING, "§e[CentralCart] {0} NPC(s) não encontrado(s) e foram removidos da lista.", missing);
         }
     }
 
@@ -119,8 +120,7 @@ public class TopNpcManager {
             try {
                 updateOrCreateNPC(registry, customer);
             } catch (Exception e) {
-                logger.severe("Erro ao atualizar/criar NPC para " + customer.getName() + ": " + e.getMessage());
-                logger.log(java.util.logging.Level.SEVERE, "Stack trace:", e);
+                logger.log(Level.SEVERE, "Erro ao atualizar/criar NPC para " + customer.getName(), e);
             }
         }
 
@@ -138,20 +138,23 @@ public class TopNpcManager {
         String positionKey = getPositionKey(position);
 
         if (positionKey == null) {
-            logger.warning("Posição inválida: " + position);
+            logger.log(Level.WARNING, "Posição inválida: {0}", position);
             return;
         }
 
         // Busca a localização do config
         Location location = getLocationFromConfig(positionKey);
         if (location == null) {
-            logger.warning("Localização não configurada para posição: " + position);
+            logger.log(Level.WARNING, "Localização não configurada para posição: {0}", position);
             return;
         }
 
         // Busca o nome formatado
         String displayName = config.getString("npcs.names." + positionKey,
             "§e{player} §7- " + position + "º Lugar");
+        if (displayName == null) {
+            displayName = "§e{player} §7- " + position + "º Lugar";
+        }
         displayName = displayName.replace("{player}", customer.getName());
 
         // Verifica se já existe um NPC nesta posição
@@ -162,7 +165,7 @@ public class TopNpcManager {
 
         if (npc != null) {
             // Atualiza NPC existente
-            logger.info("Atualizando NPC na posição " + position + " para " + customer.getName());
+            logger.log(Level.INFO, "Atualizando NPC na posição {0} para {1}", new Object[]{position, customer.getName()});
 
             // Atualiza o nome exibido
             npc.setName(displayName);
@@ -180,10 +183,10 @@ public class TopNpcManager {
                 npc.spawn(location);
             }
 
-            logger.info("NPC atualizado: " + displayName + " movido para " + formatLocation(location));
+            logger.log(Level.INFO, "NPC atualizado: {0} movido para {1}", new Object[]{displayName, formatLocation(location)});
         } else {
             // Cria novo NPC
-            logger.info("Criando novo NPC na posição " + position + " para " + customer.getName());
+            logger.log(Level.INFO, "Criando novo NPC na posição {0} para {1}", new Object[]{position, customer.getName()});
 
             npc = registry.createNPC(EntityType.PLAYER, customer.getName());
             npc.setName(displayName);
@@ -199,10 +202,9 @@ public class TopNpcManager {
                 // Salva o ID do NPC
                 npcIds.put(position, npc.getId());
 
-                logger.info("NPC criado: " + displayName + " na posição " + formatLocation(location));
+                logger.log(Level.INFO, "NPC criado: {0} na posição {1}", new Object[]{displayName, formatLocation(location)});
             } catch (Exception e) {
-                logger.severe("Erro ao spawnar NPC: " + e.getMessage());
-                logger.log(java.util.logging.Level.SEVERE, "Stack trace:", e);
+                logger.log(Level.SEVERE, "Erro ao spawnar NPC", e);
             }
         }
     }
@@ -240,6 +242,9 @@ public class TopNpcManager {
         }
 
         String worldName = locationSection.getString("world", "world");
+        if (worldName == null || worldName.isEmpty()) {
+            worldName = "world";
+        }
         double x = locationSection.getDouble("x", 0.0);
         double y = locationSection.getDouble("y", 64.0);
         double z = locationSection.getDouble("z", 0.0);
@@ -248,7 +253,7 @@ public class TopNpcManager {
 
         org.bukkit.World world = Bukkit.getWorld(worldName);
         if (world == null) {
-            logger.warning("Mundo não encontrado: " + worldName);
+            logger.log(Level.WARNING, "Mundo não encontrado: {0}", worldName);
             return null;
         }
 
@@ -272,10 +277,9 @@ public class TopNpcManager {
                         int position = Integer.parseInt(key);
                         int npcId = idsSection.getInt(key);
                         npcIds.put(position, npcId);
-                        logger.info("NPC ID carregado: posição " + position + " -> ID " + npcId);
+                        logger.log(Level.INFO, "NPC ID carregado: posição {0} -> ID {1}", new Object[]{position, npcId});
                     } catch (NumberFormatException e) {
-                        logger.warning("Chave inválida no saved_ids: " + key);
-                        logger.log(java.util.logging.Level.WARNING, "Stack trace:", e);
+                        logger.log(Level.WARNING, "Chave inválida no saved_ids: {0}", key);
                     }
                 }
             }
@@ -325,7 +329,7 @@ public class TopNpcManager {
         config.set("npcs.saved_ids", null);
 
         if (removed > 0) {
-            logger.info("Removidos " + removed + " NPCs dos top doadores.");
+            logger.log(Level.INFO, "Removidos {0} NPCs dos top doadores.", removed);
         }
     }
 

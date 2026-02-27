@@ -47,19 +47,27 @@ public class ReloadCommand implements CommandExecutor {
 
             // Informações de status
             Map<String, String> tokenStatus = new HashMap<>();
-            tokenStatus.put("status", plugin.getConfig().getString("api.token", "").equals(Constants.PLACEHOLDER_TOKEN)
-                ? messages.getMessage("reload.status_not_configured")
-                : messages.getMessage("reload.status_configured"));
+            String tokenValue = plugin.getConfig().getString("api.token", "");
+            if (tokenValue == null) {
+                tokenValue = "";
+            }
+            String statusNotConfigured = messages.getMessage("reload.status_not_configured");
+            String statusConfigured = messages.getMessage("reload.status_configured");
+            tokenStatus.put("status", tokenValue.equals(Constants.PLACEHOLDER_TOKEN)
+                ? (statusNotConfigured != null ? statusNotConfigured : "Não configurado")
+                : (statusConfigured != null ? statusConfigured : "Configurado"));
             sender.sendMessage(messages.getMessageWithPrefix("reload.info_token", tokenStatus));
 
             Map<String, String> npcsStatus = new HashMap<>();
+            String statusEnabled = messages.getMessage("reload.status_enabled");
+            String statusDisabled = messages.getMessage("reload.status_disabled");
             npcsStatus.put("status", plugin.getConfig().getBoolean("npcs.enabled", true)
-                ? messages.getMessage("reload.status_enabled")
-                : messages.getMessage("reload.status_disabled"));
+                ? (statusEnabled != null ? statusEnabled : "Ativado")
+                : (statusDisabled != null ? statusDisabled : "Desativado"));
             sender.sendMessage(messages.getMessageWithPrefix("reload.info_npcs", npcsStatus));
 
             Map<String, String> citizensStatus = new HashMap<>();
-            citizensStatus.put("status", plugin.getNpcManager().isCitizensEnabled()
+            citizensStatus.put("status", plugin.getNpcManager() != null && plugin.getNpcManager().isCitizensEnabled()
                 ? messages.getMessage("reload.status_detected")
                 : messages.getMessage("reload.status_not_found"));
             sender.sendMessage(messages.getMessageWithPrefix("reload.info_citizens", citizensStatus));

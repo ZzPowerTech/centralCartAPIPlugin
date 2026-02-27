@@ -50,16 +50,16 @@ public class CentralCartApiService {
 
         // Validação de configurações
         if (!PluginUtils.isValidTimeout(this.timeout)) {
-            logger.warning("Timeout configurado inválido (" + this.timeout + "ms). Usando padrão de " + Constants.DEFAULT_TIMEOUT + "ms");
+            logger.log(Level.WARNING, "Timeout configurado inválido ({0}ms). Usando padrão de {1}ms", new Object[]{this.timeout, Constants.DEFAULT_TIMEOUT});
         }
         if (!PluginUtils.isValidRetryAttempts(this.retryAttempts)) {
-            logger.warning("Número de tentativas inválido (" + this.retryAttempts + "). Usando padrão de " + Constants.DEFAULT_RETRY_ATTEMPTS);
+            logger.log(Level.WARNING, "Número de tentativas inválido ({0}). Usando padrão de {1}", new Object[]{this.retryAttempts, Constants.DEFAULT_RETRY_ATTEMPTS});
         }
 
         // Inicializa cache com duração configurável (padrão: 30 minutos)
         long cacheDuration = config.getLong("api.cache_duration_minutes", Constants.DEFAULT_CACHE_DURATION_MINUTES);
         if (!PluginUtils.isValidCacheDuration(cacheDuration)) {
-            logger.warning("Duração de cache inválida (" + cacheDuration + " minutos). Usando padrão de " + Constants.DEFAULT_CACHE_DURATION_MINUTES + " minutos");
+            logger.log(Level.WARNING, "Duração de cache inválida ({0} minutos). Usando padrão de {1} minutos", new Object[]{cacheDuration, Constants.DEFAULT_CACHE_DURATION_MINUTES});
             cacheDuration = Constants.DEFAULT_CACHE_DURATION_MINUTES;
         }
         this.cache = new TopDonatorsCache(cacheDuration);
@@ -88,7 +88,7 @@ public class CentralCartApiService {
     public CompletableFuture<List<TopCustomer>> getTop3DonatorsPreviousMonth(boolean forceRefresh) {
         // Verifica se pode usar cache
         if (!forceRefresh && cache.isValid()) {
-            logger.info("§a[Cache] Usando dados em cache (válido por mais " + cache.getRemainingValidityMinutes() + " minutos)");
+            logger.log(Level.INFO, "§a[Cache] Usando dados em cache (válido por mais {0} minutos)", cache.getRemainingValidityMinutes());
             return CompletableFuture.completedFuture(cache.getData());
         }
 
@@ -101,13 +101,13 @@ public class CentralCartApiService {
             String from = fromDate.format(DATE_FORMATTER);
             String to = toDate.format(DATE_FORMATTER);
 
-            logger.info("Buscando top doadores de " + from + " até " + to);
+            logger.log(Level.INFO, "Buscando top doadores de {0} até {1}", new Object[]{from, to});
 
             // Tenta buscar com retry
             for (int attempt = 1; attempt <= retryAttempts; attempt++) {
                 try {
                     if (attempt > 1) {
-                        logger.info("Tentativa " + attempt + " de " + retryAttempts + "...");
+                        logger.log(Level.INFO, "Tentativa {0} de {1}...", new Object[]{attempt, retryAttempts});
                     }
 
                     // Faz a requisição à API
@@ -128,10 +128,10 @@ public class CentralCartApiService {
                     return top3;
 
                 } catch (java.net.SocketTimeoutException e) {
-                    logger.warning("Timeout na tentativa " + attempt + " de " + retryAttempts);
+                    logger.log(Level.WARNING, "Timeout na tentativa {0} de {1}", new Object[]{attempt, retryAttempts});
                     if (attempt == retryAttempts) {
-                        logger.severe("Erro de timeout após " + retryAttempts + " tentativas!");
-                        logger.severe("A API demorou mais que " + (timeout / 1000) + " segundos para responder.");
+                        logger.log(Level.SEVERE, "Erro de timeout após {0} tentativas!", retryAttempts);
+                        logger.log(Level.SEVERE, "A API demorou mais que {0} segundos para responder.", timeout / 1000);
                         logger.severe("Tente aumentar o timeout em config.yml: api.timeout");
 
                         // Em caso de erro, retorna cache antigo se disponível
@@ -157,9 +157,9 @@ public class CentralCartApiService {
                     }
                     break; // Não tenta novamente em caso de erro de DNS
                 } catch (Exception e) {
-                    logger.warning("Erro na tentativa " + attempt + ": " + e.getMessage());
+                    logger.log(Level.WARNING, "Erro na tentativa {0}: {1}", new Object[]{attempt, e.getMessage()});
                     if (attempt == retryAttempts) {
-                        logger.severe("Erro ao buscar top doadores após " + retryAttempts + " tentativas: " + e.getMessage());
+                        logger.log(Level.SEVERE, "Erro ao buscar top doadores após {0} tentativas: {1}", new Object[]{retryAttempts, e.getMessage()});
 
                         // Retorna cache se disponível
                         if (cache.hasData()) {
@@ -249,7 +249,7 @@ public class CentralCartApiService {
             try {
                 jsonResponse = gson.fromJson(response.toString(), JsonObject.class);
             } catch (JsonSyntaxException e) {
-                logger.severe("Erro ao parsear resposta JSON da API: " + e.getMessage());
+                logger.log(Level.SEVERE, "Erro ao parsear resposta JSON da API: {0}", e.getMessage());
                 throw new Exception("Resposta da API inválida: " + e.getMessage());
             }
 
@@ -286,7 +286,7 @@ public class CentralCartApiService {
                 customer.setPosition(i + 1);
                 customers.add(customer);
 
-                logger.info("Top " + (i + 1) + ": " + username + " - " + spentStr);
+                logger.log(Level.INFO, "Top {0}: {1} - {2}", new Object[]{i + 1, username, spentStr});
             }
 
             return customers;
@@ -320,7 +320,7 @@ public class CentralCartApiService {
                 .replace(",", ".");
             return Double.parseDouble(cleaned);
         } catch (Exception e) {
-            logger.warning("Erro ao parsear valor: " + spent);
+            logger.log(Level.WARNING, "Erro ao parsear valor: {0}", spent);
             return 0.0;
         }
     }
