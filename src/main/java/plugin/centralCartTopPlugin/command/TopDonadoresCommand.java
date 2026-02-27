@@ -1,15 +1,18 @@
 package plugin.centralCartTopPlugin.command;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
+
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.manager.MessagesManager;
 import plugin.centralCartTopPlugin.model.TopCustomer;
-
-import java.util.HashMap;
-import java.util.Map;
+import plugin.centralCartTopPlugin.util.Constants;
+import plugin.centralCartTopPlugin.util.PluginUtils;
 
 public class TopDonadoresCommand implements CommandExecutor {
 
@@ -38,10 +41,10 @@ public class TopDonadoresCommand implements CommandExecutor {
 
             // Configurações de exibição
             boolean showTotal = plugin.getConfig().getBoolean("display.show-total", true);
-            String currencySymbol = plugin.getConfig().getString("display.currency-symbol", "R$");
+            String currencySymbol = plugin.getConfig().getString("display.currency-symbol", Constants.DEFAULT_CURRENCY_SYMBOL);
 
             for (TopCustomer customer : top3) {
-                String medal = getMedal(customer.getPosition());
+                String medal = PluginUtils.getMedal(customer.getPosition(), messages);
 
                 Map<String, String> placeholders = new HashMap<>();
                 placeholders.put("medal", medal);
@@ -65,19 +68,6 @@ public class TopDonadoresCommand implements CommandExecutor {
         });
 
         return true;
-    }
-
-    private String getMedal(int position) {
-        switch (position) {
-            case 1:
-                return messages.getMessage("top_donators.medals.first");
-            case 2:
-                return messages.getMessage("top_donators.medals.second");
-            case 3:
-                return messages.getMessage("top_donators.medals.third");
-            default:
-                return "§f";
-        }
     }
 }
 

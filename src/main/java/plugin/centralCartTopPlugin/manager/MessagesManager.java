@@ -76,12 +76,7 @@ public class MessagesManager {
      * @return Mensagem formatada
      */
     public String getMessage(String path, Map<String, String> placeholders) {
-        // Verifica cache primeiro
-        String cacheKey = path + placeholders.toString();
-        if (cachedMessages.containsKey(cacheKey)) {
-            return cachedMessages.get(cacheKey);
-        }
-
+        // Busca mensagem base do config (ou cache simples)
         String message = messagesConfig.getString(path, "§cMensagem não encontrada: " + path);
 
         // Substitui placeholders
@@ -91,9 +86,6 @@ public class MessagesManager {
 
         // Formata cores
         message = formatColors(message);
-
-        // Salva no cache
-        cachedMessages.put(cacheKey, message);
 
         return message;
     }

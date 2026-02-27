@@ -17,6 +17,7 @@ import plugin.centralCartTopPlugin.service.CentralCartApiService;
 import plugin.centralCartTopPlugin.service.RewardsManager;
 import plugin.centralCartTopPlugin.service.TopNpcManager;
 import plugin.centralCartTopPlugin.task.MonthlyNpcUpdateTask;
+import plugin.centralCartTopPlugin.util.Constants;
 
 import java.util.logging.Level;
 
@@ -55,7 +56,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
                     // Se não havia NPCs salvos e a opção auto_spawn_on_start estiver ativa, busca o top3 e cria NPCs automaticamente
                     if (npcManager.getNpcIds().isEmpty() && getConfig().getBoolean("npcs.auto_spawn_on_start", true)) {
-                        getLogger().info("§e[CentralCartTopPlugin] Nenhum NPC salvo encontrado — buscando top3 para spawn automático.");
+                        getLogger().info("§e" + Constants.LOG_PREFIX + " Nenhum NPC salvo encontrado — buscando top3 para spawn automático.");
                         apiService.getTop3DonatorsPreviousMonth().thenAccept(top3 -> {
                             if (top3 != null && !top3.isEmpty()) {
                                 // Executa criação na thread principal
@@ -63,14 +64,14 @@ public final class CentralCartTopPlugin extends JavaPlugin {
                                     try {
                                         npcManager.createOrUpdateNPCs(top3);
                                         saveConfig();
-                                        getLogger().info("§a[CentralCartTopPlugin] NPCs criados automaticamente no início do servidor.");
+                                        getLogger().info("§a" + Constants.LOG_PREFIX + " NPCs criados automaticamente no início do servidor.");
                                     } catch (Exception ex) {
                                         getLogger().severe("Erro ao criar NPCs no startup: " + ex.getMessage());
                                         getLogger().log(Level.SEVERE, "Stack trace:", ex);
                                     }
                                 });
                             } else {
-                                getLogger().warning("§e[CentralCartTopPlugin] Não foi possível obter top3 no startup para spawn automático.");
+                                getLogger().warning("§e" + Constants.LOG_PREFIX + " Não foi possível obter top3 no startup para spawn automático.");
                             }
                         }).exceptionally(t -> {
                             getLogger().severe("Erro ao buscar top3 no startup: " + t.getMessage());
@@ -79,13 +80,13 @@ public final class CentralCartTopPlugin extends JavaPlugin {
                     }
 
                 } else {
-                    getLogger().warning("§e[CentralCartTopPlugin] Citizens não detectado no momento do carregamento de NPCs.");
+                    getLogger().warning("§e" + Constants.LOG_PREFIX + " Citizens não detectado no momento do carregamento de NPCs.");
                 }
             } catch (Exception e) {
                 getLogger().severe("Erro ao carregar NPCs no onEnable: " + e.getMessage());
                 getLogger().log(Level.SEVERE, "Stack trace:", e);
             }
-        }, 20L);
+        }, Constants.STARTUP_DELAY_TICKS);
 
         // Inicia a tarefa mensal automática
         startMonthlyUpdateTask();
@@ -166,18 +167,17 @@ public final class CentralCartTopPlugin extends JavaPlugin {
      */
     private void startMonthlyUpdateTask() {
         if (!getConfig().getBoolean("npcs.auto_update_enabled", true)) {
-            getLogger().info("§e[CentralCartTopPlugin] Atualização automática mensal desabilitada.");
+            getLogger().info("§e" + Constants.LOG_PREFIX + " Atualização automática mensal desabilitada.");
             return;
         }
 
         monthlyUpdateTask = new MonthlyNpcUpdateTask(this);
 
-        // Executa a cada hora (72000 ticks = 1 hora)
-        // Verifica se é dia 1º do mês
-        monthlyUpdateTask.runTaskTimerAsynchronously(this, 20L, 72000L);
+        // Executa a cada hora - verifica se é dia 1º do mês
+        monthlyUpdateTask.runTaskTimerAsynchronously(this, Constants.STARTUP_DELAY_TICKS, Constants.MONTHLY_UPDATE_CHECK_INTERVAL);
 
-        getLogger().info("§a[CentralCartTopPlugin] Atualização automática mensal ativada!");
-        getLogger().info("§a[CentralCartTopPlugin] Os NPCs serão atualizados automaticamente todo dia 1º às 00:00h");
+        getLogger().info("§a" + Constants.LOG_PREFIX + " Atualização automática mensal ativada!");
+        getLogger().info("§a" + Constants.LOG_PREFIX + " Os NPCs serão atualizados automaticamente todo dia 1º às 00:00h");
     }
 
     /**

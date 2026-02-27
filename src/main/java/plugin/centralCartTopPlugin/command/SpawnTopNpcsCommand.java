@@ -10,6 +10,8 @@ import plugin.centralCartTopPlugin.manager.MessagesManager;
 import plugin.centralCartTopPlugin.model.TopCustomer;
 import plugin.centralCartTopPlugin.service.CentralCartApiService;
 import plugin.centralCartTopPlugin.service.TopNpcManager;
+import plugin.centralCartTopPlugin.util.Constants;
+import plugin.centralCartTopPlugin.util.PluginUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +32,7 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!sender.hasPermission("centralcart.admin")) {
+        if (!sender.hasPermission(Constants.PERMISSION_ADMIN)) {
             sender.sendMessage(messages.getMessageWithPrefix("general.no_permission"));
             return true;
         }
@@ -51,7 +53,7 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
                 sender.sendMessage(messages.getMessage("spawn_npcs.cause_api_offline"));
 
                 Map<String, String> timeoutPlaceholder = new HashMap<>();
-                timeoutPlaceholder.put("timeout", String.valueOf(plugin.getConfig().getInt("api.timeout", 5000)));
+                timeoutPlaceholder.put("timeout", String.valueOf(plugin.getConfig().getInt("api.timeout", Constants.DEFAULT_TIMEOUT)));
                 sender.sendMessage(messages.getMessage("spawn_npcs.cause_timeout", timeoutPlaceholder));
 
                 sender.sendMessage(messages.getMessage("spawn_npcs.cause_token"));
@@ -70,10 +72,10 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
                     sender.sendMessage(messages.getMessage("spawn_npcs.success_title"));
                     sender.sendMessage(messages.getMessage("spawn_npcs.success_header"));
 
-                    String currencySymbol = plugin.getConfig().getString("display.currency-symbol", "R$");
+                    String currencySymbol = plugin.getConfig().getString("display.currency-symbol", Constants.DEFAULT_CURRENCY_SYMBOL);
 
                     for (TopCustomer customer : top3) {
-                        String medal = getMedal(customer.getPosition());
+                        String medal = PluginUtils.getMedal(customer.getPosition(), messages);
 
                         Map<String, String> placeholders = new HashMap<>();
                         placeholders.put("medal", medal);
@@ -102,19 +104,6 @@ public class SpawnTopNpcsCommand implements CommandExecutor {
         });
 
         return true;
-    }
-
-    private String getMedal(int position) {
-        switch (position) {
-            case 1:
-                return messages.getMessage("top_donators.medals.first");
-            case 2:
-                return messages.getMessage("top_donators.medals.second");
-            case 3:
-                return messages.getMessage("top_donators.medals.third");
-            default:
-                return "§f";
-        }
     }
 }
 

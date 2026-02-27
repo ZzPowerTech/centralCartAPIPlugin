@@ -6,9 +6,11 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.manager.MessagesManager;
+import plugin.centralCartTopPlugin.util.Constants;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class ReloadCommand implements CommandExecutor {
 
@@ -22,7 +24,7 @@ public class ReloadCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!sender.hasPermission("centralcart.admin")) {
+        if (!sender.hasPermission(Constants.PERMISSION_ADMIN)) {
             sender.sendMessage(messages.getMessageWithPrefix("general.no_permission"));
             return true;
         }
@@ -45,7 +47,7 @@ public class ReloadCommand implements CommandExecutor {
 
             // Informações de status
             Map<String, String> tokenStatus = new HashMap<>();
-            tokenStatus.put("status", plugin.getConfig().getString("api.token", "").equals("COLOQUE_SEU_TOKEN_AQUI")
+            tokenStatus.put("status", plugin.getConfig().getString("api.token", "").equals(Constants.PLACEHOLDER_TOKEN)
                 ? messages.getMessage("reload.status_not_configured")
                 : messages.getMessage("reload.status_configured"));
             sender.sendMessage(messages.getMessageWithPrefix("reload.info_token", tokenStatus));
@@ -72,8 +74,7 @@ public class ReloadCommand implements CommandExecutor {
             Map<String, String> errorPlaceholders = new HashMap<>();
             errorPlaceholders.put("error", e.getMessage());
             sender.sendMessage(messages.getMessageWithPrefix("reload.error", errorPlaceholders));
-            plugin.getLogger().severe("Erro ao recarregar plugin: " + e.getMessage());
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Erro ao recarregar plugin", e);
         }
 
         return true;

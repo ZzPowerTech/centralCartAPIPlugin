@@ -1,21 +1,23 @@
 package plugin.centralCartTopPlugin.service;
 
-import net.citizensnpcs.api.CitizensAPI;
-import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.api.npc.NPCRegistry;
-import net.citizensnpcs.trait.SkinTrait;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.EntityType;
-import plugin.centralCartTopPlugin.model.TopCustomer;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.EntityType;
+
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.api.npc.NPCRegistry;
+import net.citizensnpcs.trait.SkinTrait;
+import plugin.centralCartTopPlugin.model.TopCustomer;
+import plugin.centralCartTopPlugin.util.PluginUtils;
 
 public class TopNpcManager {
 
@@ -206,26 +208,20 @@ public class TopNpcManager {
     }
 
     /**
-     * Converte número da posição para key do config
+     * Converte número da posição para key do config usando PluginUtils
      */
     private String getPositionKey(int position) {
-        switch (position) {
-            case 1:
-                return "first";
-            case 2:
-                return "second";
-            case 3:
-                return "third";
-            default:
-                return null;
-        }
+        return PluginUtils.getPositionKey(position);
     }
 
     /**
-     * Formata localização para log
+     * Formata localização para log usando PluginUtils
      */
     private String formatLocation(Location loc) {
-        return String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ());
+        if (loc == null) {
+            return "null";
+        }
+        return PluginUtils.formatLocation(loc.getX(), loc.getY(), loc.getZ());
     }
 
     /**

@@ -11,12 +11,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.model.TopCustomer;
+import plugin.centralCartTopPlugin.util.Constants;
+import plugin.centralCartTopPlugin.util.PluginUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RewardsManager {
@@ -213,12 +216,21 @@ public class RewardsManager {
      * Cria um item a partir da configuração
      */
     private ItemStack createItemFromConfig(Map<String, Object> config, String month) {
+        if (config == null || month == null) {
+            return null;
+        }
+
         try {
             String materialName = (String) config.get("material");
+            if (materialName == null) {
+                logger.warning("§c" + Constants.REWARDS_PREFIX + " Material não especificado no item");
+                return null;
+            }
+
             Material material = Material.getMaterial(materialName);
 
             if (material == null) {
-                logger.warning("§c[Rewards] Material inválido: " + materialName);
+                logger.warning("§c" + Constants.REWARDS_PREFIX + " Material inválido: " + materialName);
                 return null;
             }
 
@@ -226,46 +238,59 @@ public class RewardsManager {
             ItemStack item = new ItemStack(material, amount);
             ItemMeta meta = item.getItemMeta();
 
-            if (meta != null) {
-                // Nome do item
-                if (config.containsKey("name")) {
-                    String name = ((String) config.get("name")).replace("{month}", month);
-                    meta.displayName(net.kyori.adventure.text.Component.text(name));
-                }
+            if (meta == null) {
+                logger.warning("§c" + Constants.REWARDS_PREFIX + " ItemMeta é null para material: " + materialName);
+                return item; // Retorna o item sem meta
+            }
 
-                // Lore
-                if (config.containsKey("lore")) {
-                    @SuppressWarnings("unchecked")
-                    List<String> lore = (List<String>) config.get("lore");
+            // Nome do item
+            if (config.containsKey("name")) {
+                String name = ((String) config.get("name")).replace("{month}", month);
+                meta.displayName(net.kyori.adventure.text.Component.text(name));
+            }
+
+            // Lore
+            if (config.containsKey("lore")) {
+                @SuppressWarnings("unchecked")
+                List<String> lore = (List<String>) config.get("lore");
+                if (lore != null) {
                     List<net.kyori.adventure.text.Component> formattedLore = new ArrayList<>();
                     for (String line : lore) {
                         formattedLore.add(net.kyori.adventure.text.Component.text(line.replace("{month}", month)));
                     }
                     meta.lore(formattedLore);
                 }
+            }
 
-                // Encantamentos
-                if (config.containsKey("enchantments")) {
-                    @SuppressWarnings("unchecked")
-                    List<String> enchantments = (List<String>) config.get("enchantments");
+            // Encantamentos
+            if (config.containsKey("enchantments")) {
+                @SuppressWarnings("unchecked")
+                List<String> enchantments = (List<String>) config.get("enchantments");
+                if (enchantments != null) {
                     for (String enchant : enchantments) {
                         String[] parts = enchant.split(":");
                         if (parts.length == 2) {
-                            Enchantment enchantment = Enchantment.getByKey(org.bukkit.NamespacedKey.minecraft(parts[0].toLowerCase()));
-                            int level = Integer.parseInt(parts[1]);
-                            if (enchantment != null) {
-                                meta.addEnchant(enchantment, level, true);
+                            try {
+                                Enchantment enchantment = Enchantment.getByKey(org.bukkit.NamespacedKey.minecraft(parts[0].toLowerCase()));
+                                int level = Integer.parseInt(parts[1]);
+                                if (enchantment != null) {
+                                    meta.addEnchant(enchantment, level, true);
+                                } else {
+                                    logger.warning("§c" + Constants.REWARDS_PREFIX + " Encantamento desconhecido: " + parts[0]);
+                                }
+                            } catch (NumberFormatException e) {
+                                logger.warning("§c" + Constants.REWARDS_PREFIX + " Nível de encantamento inválido: " + parts[1]);
                             }
                         }
                     }
                 }
-
-                item.setItemMeta(meta);
             }
+
+            item.setItemMeta(meta);
 
             return item;
         } catch (Exception e) {
-            logger.severe("§c[Rewards] Erro ao criar item: " + e.getMessage());
+            logger.log(Level.SEVERE, "§c" + Constants.REWARDS_PREFIX + " Erro ao criar item", e);
             return null;
         }
     }
@@ -308,11 +333,15 @@ public class RewardsManager {
      * Verifica e entrega recompensas pendentes ao jogador
      */
     public void checkPendingRewards(Player player) {
+        if (player == null) {
+            return;
+        }
+
         String uuid = player.getName().toLowerCase();
 
         if (pendingRewardsData.contains(uuid)) {
             int position = pendingRewardsData.getInt(uuid + ".position");
-            String month = pendingRewardsData.getString(uuid + ".month");
+            String month = pendingRewardsData.getString(uuid + ".month", "Desconhecido");
 
             // Aguarda 2 segundos antes de entregar (para o jogador carregar completamente)
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -323,9 +352,9 @@ public class RewardsManager {
                 try {
                     pendingRewardsData.save(pendingRewardsFile);
                 } catch (IOException e) {
-                    logger.severe("§c[Rewards] Erro ao remover recompensa pendente: " + e.getMessage());
+                    logger.log(Level.SEVERE, Constants.REWARDS_PREFIX + " Erro ao remover recompensa pendente", e);
                 }
-            }, 40L); // 2 segundos
+            }, Constants.PLAYER_JOIN_REWARD_DELAY_TICKS);
         }
     }
 
@@ -363,23 +392,21 @@ public class RewardsManager {
     }
 
     /**
-     * Converte posição para chave de configuração
+     * Converte posição para chave de configuração usando PluginUtils
      */
     private String getPositionKey(int position) {
-        return switch (position) {
-            case 1 -> "first";
-            case 2 -> "second";
-            case 3 -> "third";
-            default -> "first";
-        };
+        String key = PluginUtils.getPositionKey(position);
+        return key != null ? key : Constants.POSITION_KEY_FIRST; // Fallback para first
     }
 
     /**
-     * Formata o nome do material
+     * Formata o nome do material usando PluginUtils
      */
     private String formatMaterialName(Material material) {
-        String name = material.name().toLowerCase().replace("_", " ");
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
+        if (material == null) {
+            return "Unknown";
+        }
+        return PluginUtils.formatMaterialName(material.name());
     }
 
     /**
