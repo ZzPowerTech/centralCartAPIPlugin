@@ -10,6 +10,9 @@ api:
   # IMPORTANTE: Nunca compartilhe este token publicamente!
   # Obtenha seu token em: https://centralcart.com.br
   token: "COLOQUE_SEU_TOKEN_AQUI"
+  # Domínio da sua loja (usado no header x-store-domain das APIs de blog/webstore)
+  # Exemplo: loja.austv.net ou sualoja.centralcart.com.br
+  store_domain: "COLOQUE_SEU_DOMINIO_AQUI"
 
 # Mensagens personalizáveis
 messages:

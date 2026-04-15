@@ -24,7 +24,7 @@ public class BlogPostService {
     private final Gson gson;
     private final Logger logger;
     private final int timeout;
-    private final String authToken;
+    private final String storeDomain;
     private final int retryAttempts;
     private final int retryDelay;
 
@@ -32,9 +32,16 @@ public class BlogPostService {
         this.gson = new Gson();
         this.logger = logger;
         this.timeout = config.getInt("api.timeout", Constants.DEFAULT_TIMEOUT);
-        this.authToken = config.getString("api.token", "");
         this.retryAttempts = config.getInt("api.retry_attempts", Constants.DEFAULT_RETRY_ATTEMPTS);
         this.retryDelay = config.getInt("api.retry_delay", Constants.DEFAULT_RETRY_DELAY);
+
+        // Aceita URL completa (https://loja.austv.net/) ou apenas o domínio (loja.austv.net)
+        String raw = config.getString("api.store_domain", "");
+        this.storeDomain = raw.replaceAll("^https?://", "").replaceAll("/+$", "");
+
+        if (this.storeDomain.isEmpty() || this.storeDomain.equals("COLOQUE_SEU_DOMINIO_AQUI")) {
+            logger.warning("[Blog] store_domain não configurado! Configure api.store_domain no config.yml");
+        }
     }
 
     /**
@@ -84,12 +91,12 @@ public class BlogPostService {
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("x-store-domain", authToken);
+            connection.setRequestProperty("x-store-domain", storeDomain);
             connection.setConnectTimeout(timeout);
             connection.setReadTimeout(timeout);
 
             logger.log(Level.INFO, "[Blog] GET {0} | x-store-domain: {1}",
-                    new Object[]{Constants.BLOG_API_URL, authToken.isEmpty() ? "(vazio)" : authToken});
+                    new Object[]{Constants.BLOG_API_URL, storeDomain.isEmpty() ? "(vazio)" : storeDomain});
 
             int responseCode = connection.getResponseCode();
 
