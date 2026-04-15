@@ -88,13 +88,24 @@ public class BlogPostService {
             connection.setConnectTimeout(timeout);
             connection.setReadTimeout(timeout);
 
+            logger.log(Level.INFO, "[Blog] GET {0} | x-store-domain: {1}",
+                    new Object[]{Constants.BLOG_API_URL, authToken.isEmpty() ? "(vazio)" : authToken});
+
             int responseCode = connection.getResponseCode();
 
-            if (responseCode == 401) {
-                throw new Exception("[Blog] Autenticação inválida (401). Verifique o api.token no config.yml.");
-            }
             if (responseCode != 200) {
-                throw new Exception("[Blog] HTTP error code: " + responseCode);
+                // Lê o corpo do erro para diagnóstico
+                java.io.InputStream errStream = connection.getErrorStream();
+                String errBody = "";
+                if (errStream != null) {
+                    try (BufferedReader errReader = new BufferedReader(new InputStreamReader(errStream, StandardCharsets.UTF_8))) {
+                        StringBuilder sb = new StringBuilder();
+                        String l;
+                        while ((l = errReader.readLine()) != null) sb.append(l);
+                        errBody = sb.toString();
+                    } catch (IOException ignored) {}
+                }
+                throw new Exception("[Blog] HTTP " + responseCode + " — body: " + errBody);
             }
 
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
