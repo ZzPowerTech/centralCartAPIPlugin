@@ -149,8 +149,8 @@ public class BlogPostService {
             if (obj.has("id")) post.setId(String.valueOf(obj.get("id").getAsLong()));
             if (obj.has("title")) post.setTitle(obj.get("title").getAsString());
 
-            // url é montada a partir do campo "path"
-            if (obj.has("path")) post.setUrl(obj.get("path").getAsString());
+            // url completa = domínio da loja + path
+            if (obj.has("path")) post.setUrl("https://" + storeDomain + obj.get("path").getAsString());
 
             if (obj.has("created_at")) {
                 post.setCreatedAt(obj.get("created_at").getAsString());
