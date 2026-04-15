@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.centralcart'
-version = '1.0'
+version = '1.0.1'
 
 compileJava.options.encoding('UTF-8')
 
@@ -70,7 +70,7 @@ processResources {
 
 task copyJar {
     copy {
-        from 'build/libs/centralCartTopPlugin-1.0.jar'
+        from 'build/libs/centralCartTopPlugin-1.0.1.jar'
         into 'D:/AUSTV/localhost/plugins'
     }
 }
