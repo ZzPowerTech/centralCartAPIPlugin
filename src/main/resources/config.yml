@@ -73,3 +73,15 @@ npcs:
     second: "§7 {player} §e- 2º Lugar"
     third: "§c {player} §e- 3º Lugar"
 
+# Notificação de novo post no blog
+blog:
+  enabled: true
+  last_seen_post_id: ""   # gerenciado automaticamente pelo plugin
+  notification:
+    lines:
+      - "&6&l========================================"
+      - "  &f📢 <gold><bold>Nova Postagem no Blog!</bold></gold>"
+      - "  <white>Uma nova postagem foi feita no site!</white>"
+      - "  <click:open_url:'{url}'><aqua>➡️ Clique aqui para ler</aqua></click>"
+      - "  <gray>🕒 {time} - {title}</gray>"
+      - "&6&l========================================"
