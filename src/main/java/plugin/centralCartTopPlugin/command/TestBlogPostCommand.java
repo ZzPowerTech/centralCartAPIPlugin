@@ -11,6 +11,7 @@ import plugin.centralCartTopPlugin.model.BlogPost;
 import plugin.centralCartTopPlugin.util.MessageFormatter;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
@@ -117,6 +118,13 @@ public class TestBlogPostCommand implements CommandExecutor {
     }
 
     private LocalDateTime tryParseDateTime(String raw) {
+        // Tenta primeiro como OffsetDateTime (ex: "2024-03-03T23:43:12.000-03:00")
+        try {
+            return OffsetDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+            // segue para os formatos legados
+        }
+
         for (DateTimeFormatter fmt : PARSERS) {
             try {
                 return LocalDateTime.parse(raw, fmt);

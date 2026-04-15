@@ -1,6 +1,7 @@
 package plugin.centralCartTopPlugin.service;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -103,23 +104,40 @@ public class BlogPostService {
                 response.append(line);
             }
 
-            JsonObject json;
+            JsonObject root;
             try {
-                json = gson.fromJson(response.toString(), JsonObject.class);
+                root = gson.fromJson(response.toString(), JsonObject.class);
             } catch (JsonSyntaxException e) {
                 throw new Exception("[Blog] Resposta JSON inválida: " + e.getMessage());
             }
 
+            // A API retorna { "meta": {...}, "data": [ posts ] }
+            if (!root.has("data") || !root.get("data").isJsonArray()) {
+                throw new Exception("[Blog] Resposta sem campo 'data' esperado.");
+            }
+
+            JsonArray data = root.getAsJsonArray("data");
+            if (data.isEmpty()) {
+                logger.info("[Blog] Nenhum post encontrado no blog.");
+                return null;
+            }
+
+            // O primeiro elemento é o post mais recente
+            JsonObject obj = data.get(0).getAsJsonObject();
+
             BlogPost post = new BlogPost();
 
-            if (json.has("id")) post.setId(json.get("id").getAsString());
-            if (json.has("title")) post.setTitle(json.get("title").getAsString());
-            if (json.has("url")) post.setUrl(json.get("url").getAsString());
+            // id é numérico na API
+            if (obj.has("id")) post.setId(String.valueOf(obj.get("id").getAsLong()));
+            if (obj.has("title")) post.setTitle(obj.get("title").getAsString());
 
-            if (json.has("created_at")) {
-                post.setCreatedAt(json.get("created_at").getAsString());
-            } else if (json.has("createdAt")) {
-                post.setCreatedAt(json.get("createdAt").getAsString());
+            // url é montada a partir do campo "path"
+            if (obj.has("path")) post.setUrl(obj.get("path").getAsString());
+
+            if (obj.has("created_at")) {
+                post.setCreatedAt(obj.get("created_at").getAsString());
+            } else if (obj.has("createdAt")) {
+                post.setCreatedAt(obj.get("createdAt").getAsString());
             }
 
             logger.log(Level.INFO, "[Blog] Post obtido: {0}", post.getTitle());
