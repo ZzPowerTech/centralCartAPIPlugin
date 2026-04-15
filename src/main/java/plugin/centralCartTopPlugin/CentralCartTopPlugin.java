@@ -13,9 +13,11 @@ import plugin.centralCartTopPlugin.command.TestScheduleCommand;
 import plugin.centralCartTopPlugin.command.TopDonadoresCommand;
 import plugin.centralCartTopPlugin.listener.PlayerJoinListener;
 import plugin.centralCartTopPlugin.manager.MessagesManager;
+import plugin.centralCartTopPlugin.service.BlogPostService;
 import plugin.centralCartTopPlugin.service.CentralCartApiService;
 import plugin.centralCartTopPlugin.service.RewardsManager;
 import plugin.centralCartTopPlugin.service.TopNpcManager;
+import plugin.centralCartTopPlugin.task.BlogPostCheckTask;
 import plugin.centralCartTopPlugin.task.MonthlyNpcUpdateTask;
 import plugin.centralCartTopPlugin.util.Constants;
 
@@ -28,6 +30,8 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     private RewardsManager rewardsManager;
     private MonthlyNpcUpdateTask monthlyUpdateTask;
     private MessagesManager messagesManager;
+    private BlogPostService blogPostService;
+    private BlogPostCheckTask blogPostCheckTask;
 
     @Override
     public void onEnable() {
@@ -89,6 +93,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         // Inicia a tarefa mensal automática
         startMonthlyUpdateTask();
 
+        // Inicia a verificação de novos posts do blog
+        startBlogCheckTask();
+
         getLogger().info("§a[CentralCartTopPlugin] Comandos registrados!");
         getLogger().log(Level.INFO, "§a[CentralCartTopPlugin] API URL: {0}", getConfig().getString("api.url"));
     }
@@ -98,6 +105,11 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         // Cancela a tarefa de atualização mensal
         if (monthlyUpdateTask != null) {
             monthlyUpdateTask.cancel();
+        }
+
+        // Cancela a tarefa de verificação de posts do blog
+        if (blogPostCheckTask != null) {
+            blogPostCheckTask.cancel();
         }
 
         // Remove NPCs salvos para evitar duplicação em reinícios
@@ -120,6 +132,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     private void initializeServices() {
         // Inicializa o serviço da API
         apiService = new CentralCartApiService(getLogger(), getConfig());
+
+        // Inicializa o serviço de blog
+        blogPostService = new BlogPostService(getLogger(), getConfig());
 
         // Inicializa o gerenciador de NPCs
         npcManager = new TopNpcManager(getLogger(), getConfig());
@@ -178,6 +193,21 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     }
 
     /**
+     * Inicia a tarefa de verificação de novos posts do blog
+     */
+    private void startBlogCheckTask() {
+        if (!getConfig().getBoolean("blog.enabled", false)) {
+            getLogger().info("§e" + Constants.LOG_PREFIX + " Notificações de blog desabilitadas.");
+            return;
+        }
+
+        blogPostCheckTask = new BlogPostCheckTask(this);
+        blogPostCheckTask.runTaskTimerAsynchronously(this, Constants.STARTUP_DELAY_TICKS, Constants.BLOG_CHECK_INTERVAL_TICKS);
+
+        getLogger().info("§a" + Constants.LOG_PREFIX + " Verificação de novos posts do blog ativada (a cada 5 minutos)!");
+    }
+
+    /**
      * Recarrega os serviços do plugin com a nova configuração
      */
     public void reloadServices() {
@@ -188,6 +218,12 @@ public final class CentralCartTopPlugin extends JavaPlugin {
             monthlyUpdateTask.cancel();
         }
 
+        // Cancela a tarefa de blog
+        if (blogPostCheckTask != null) {
+            blogPostCheckTask.cancel();
+            blogPostCheckTask = null;
+        }
+
         // Recarrega mensagens
         if (messagesManager != null) {
             messagesManager.reload();
@@ -195,6 +231,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
         // Recria o serviço da API (para pegar novo token/config)
         apiService = new CentralCartApiService(getLogger(), getConfig());
+
+        // Recria o serviço de blog
+        blogPostService = new BlogPostService(getLogger(), getConfig());
 
         // Recarrega o manager de NPCs com a nova config (mantendo a instância para preservar registry)
         if (npcManager != null) {
@@ -213,8 +252,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         // Re-registra comandos para usar os novos serviços e config
         registerCommands();
 
-        // Reinicia a tarefa de atualização mensal
+        // Reinicia as tarefas
         startMonthlyUpdateTask();
+        startBlogCheckTask();
 
         getLogger().info("§a[CentralCartTopPlugin] Serviços reinicializados!");
     }
@@ -233,5 +273,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
 
     public MessagesManager getMessagesManager() {
         return messagesManager;
+    }
+
+    public BlogPostService getBlogPostService() {
+        return blogPostService;
     }
 }

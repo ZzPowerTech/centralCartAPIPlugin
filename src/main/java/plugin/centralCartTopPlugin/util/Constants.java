@@ -43,6 +43,10 @@ public final class Constants {
     public static final String DEFAULT_CURRENCY_SYMBOL = "R$";
     public static final String PLACEHOLDER_TOKEN = "COLOQUE_SEU_TOKEN_AQUI";
 
+    // Blog
+    public static final long BLOG_CHECK_INTERVAL_TICKS = TICKS_PER_MINUTE * 5; // 6000 ticks (5 minutos)
+    public static final String BLOG_API_URL = "https://api.centralcart.com.br/v1/webstore/post";
+
     // Prefixos de log
     public static final String LOG_PREFIX = "[CentralCartTopPlugin]";
     public static final String CACHE_PREFIX = "[Cache]";
