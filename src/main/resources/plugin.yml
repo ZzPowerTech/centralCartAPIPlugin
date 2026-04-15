@@ -49,3 +49,8 @@ commands:
     usage: /messages [reload|clear]
     permission: centralcart.admin
     aliases: [msgs, mensagens]
+  testblogpost:
+    description: Testa o broadcast de novo post do blog (não altera last_seen_post_id)
+    usage: /testblogpost
+    permission: centralcart.admin
+    aliases: [testblog, testarpost]

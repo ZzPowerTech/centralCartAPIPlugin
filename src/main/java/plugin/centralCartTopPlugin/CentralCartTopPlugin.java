@@ -8,6 +8,7 @@ import plugin.centralCartTopPlugin.command.ReloadCommand;
 import plugin.centralCartTopPlugin.command.RemoveTopNpcsCommand;
 import plugin.centralCartTopPlugin.command.ScheduleInfoCommand;
 import plugin.centralCartTopPlugin.command.SpawnTopNpcsCommand;
+import plugin.centralCartTopPlugin.command.TestBlogPostCommand;
 import plugin.centralCartTopPlugin.command.TestRewardsCommand;
 import plugin.centralCartTopPlugin.command.TestScheduleCommand;
 import plugin.centralCartTopPlugin.command.TopDonadoresCommand;
@@ -159,6 +160,7 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         getCommand("testrewards").setExecutor(new TestRewardsCommand(this));
         getCommand("cacheinfo").setExecutor(new CacheInfoCommand(this));
         getCommand("messages").setExecutor(new MessagesCommand(this));
+        getCommand("testblogpost").setExecutor(new TestBlogPostCommand(this));
     }
 
     /**
