@@ -60,3 +60,6 @@ run/
 *.log
 logs/
 
+# Git Worktrees
+.worktrees/
+

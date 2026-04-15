@@ -170,11 +170,10 @@ public class TopNpcManager {
             // Atualiza o nome exibido
             npc.setName(displayName);
 
-            // Atualiza a skin do jogador
-            if (npc.hasTrait(SkinTrait.class)) {
-                SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
-                skinTrait.setSkinName(customer.getName());
-            }
+            // Atualiza a skin — getOrAddTrait garante que a trait existe antes de atualizar,
+            // sem depender de hasTrait que deixaria NPCs sem trait herdada sem skin atualizada
+            SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
+            skinTrait.setSkinName(customer.getName(), true);
 
             // Move o NPC para a nova localização (teleporta)
             if (npc.isSpawned()) {

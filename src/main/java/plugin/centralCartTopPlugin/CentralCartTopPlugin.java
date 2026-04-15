@@ -100,16 +100,11 @@ public final class CentralCartTopPlugin extends JavaPlugin {
             monthlyUpdateTask.cancel();
         }
 
-        // Remove NPCs salvos para evitar duplicação em reinícios
-        if (npcManager != null && npcManager.isCitizensEnabled()) {
-            try {
-                npcManager.removeAllNPCs();
-                // Salva config para persistir remoção
-                saveConfig();
-            } catch (Exception e) {
-                getLogger().log(Level.SEVERE, "Erro ao remover NPCs no onDisable", e);
-            }
-        }
+        // Persiste os IDs dos NPCs para que sejam reutilizados no próximo onEnable.
+        // Os NPCs não são destruídos: o Citizens os salva e os recarrega automaticamente
+        // entre reinícios do servidor. Destruí-los aqui causaria a criação de novos
+        // NPCs a cada restart, em vez de reutilizar os existentes.
+        saveConfig();
 
         getLogger().info("§c[CentralCartTopPlugin] Plugin desabilitado!");
     }
