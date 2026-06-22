@@ -1,5 +1,12 @@
 package plugin.centralCartTopPlugin.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
+
 import plugin.centralCartTopPlugin.manager.MessagesManager;
 
 /**
@@ -10,6 +17,57 @@ public final class PluginUtils {
     // Impede instanciação
     private PluginUtils() {
         throw new UnsupportedOperationException("Utility class");
+    }
+
+    /**
+     * Normaliza o domínio da loja aceitando tanto a URL completa
+     * (ex.: {@code https://loja.austv.net/}) quanto apenas o host ({@code loja.austv.net}).
+     *
+     * @param raw valor bruto vindo do config (pode ser nulo)
+     * @return o host sem protocolo nem barras finais, ou string vazia se nulo
+     */
+    public static String normalizeStoreDomain(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        return raw.trim()
+                .replaceAll("^https?://", "")
+                .replaceAll("/+$", "");
+    }
+
+    /**
+     * Indica se o domínio da loja foi de fato configurado (não vazio e não placeholder).
+     *
+     * @param domain domínio já normalizado
+     * @return true se utilizável em uma requisição
+     */
+    public static boolean isStoreDomainConfigured(String domain) {
+        return domain != null
+                && !domain.isEmpty()
+                && !domain.equalsIgnoreCase(Constants.PLACEHOLDER_STORE_DOMAIN);
+    }
+
+    /**
+     * Lê o corpo do {@link HttpURLConnection#getErrorStream()} para diagnóstico de respostas != 200.
+     *
+     * @param connection conexão já com responseCode obtido
+     * @return corpo do erro como texto, ou string vazia se indisponível
+     */
+    public static String readErrorBody(HttpURLConnection connection) {
+        InputStream errStream = connection.getErrorStream();
+        if (errStream == null) {
+            return "";
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(errStream, StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            return sb.toString();
+        } catch (IOException ignored) {
+            return "";
+        }
     }
 
     /**

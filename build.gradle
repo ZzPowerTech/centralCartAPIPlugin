@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.centralcart'
-version = '1.1.0'
+version = '1.2.0'
 
 compileJava.options.encoding('UTF-8')
 
@@ -68,9 +68,10 @@ processResources {
     }
 }
 
-task copyJar {
-    copy {
-        from 'build/libs/centralCartTopPlugin-1.1.0.jar'
-        into 'D:/AUSTV/localhost/plugins'
-    }
+// Copia o jar final para a pasta de plugins do servidor local.
+// Usa a saída da task 'jar' (cria a dependência automaticamente) e a versão dinâmica,
+// evitando o nome de arquivo fixo que quebrava a cada bump de versão.
+tasks.register('copyJar', Copy) {
+    from tasks.named('jar')
+    into 'D:/AUSTV/localhost/plugins'
 }

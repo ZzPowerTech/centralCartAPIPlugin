@@ -35,6 +35,7 @@ public class CentralCartApiService {
     private final String apiUrl;
     private final int timeout;
     private final String authToken;
+    private final String storeDomain;
     private final int retryAttempts;
     private final int retryDelay;
     private final TopDonatorsCache cache;
@@ -45,6 +46,7 @@ public class CentralCartApiService {
         this.apiUrl = config.getString("api.url", Constants.DEFAULT_API_URL);
         this.timeout = config.getInt("api.timeout", Constants.DEFAULT_TIMEOUT);
         this.authToken = config.getString("api.token", "");
+        this.storeDomain = PluginUtils.normalizeStoreDomain(config.getString("api.store_domain", ""));
         this.retryAttempts = config.getInt("api.retry_attempts", Constants.DEFAULT_RETRY_ATTEMPTS);
         this.retryDelay = config.getInt("api.retry_delay", Constants.DEFAULT_RETRY_DELAY);
 
@@ -69,6 +71,15 @@ public class CentralCartApiService {
             logger.warning("==========================================");
             logger.warning("ATENÇÃO: Token de autenticação não configurado!");
             logger.warning("Configure o token em: plugins/centralCartTopPlugin/config.yml");
+            logger.warning("==========================================");
+        }
+
+        // Validar se o domínio da loja foi configurado (necessário no header x-store-domain)
+        if (!PluginUtils.isStoreDomainConfigured(storeDomain)) {
+            logger.warning("==========================================");
+            logger.warning("ATENÇÃO: api.store_domain não configurado!");
+            logger.warning("A API CentralCart pode responder 404 'Store not found' sem o domínio da loja.");
+            logger.warning("Configure em config.yml -> api.store_domain: \"loja.austv.net\"");
             logger.warning("==========================================");
         }
     }
@@ -218,8 +229,15 @@ public class CentralCartApiService {
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("Authorization", "Bearer " + authToken);
+            // A API CentralCart é multi-tenant: identifica a loja pelo domínio.
+            if (PluginUtils.isStoreDomainConfigured(storeDomain)) {
+                connection.setRequestProperty("x-store-domain", storeDomain);
+            }
             connection.setConnectTimeout(timeout);
             connection.setReadTimeout(timeout);
+
+            logger.log(Level.INFO, "[Top] GET {0} | x-store-domain: {1}",
+                    new Object[]{urlString, storeDomain.isEmpty() ? "(vazio)" : storeDomain});
 
             int responseCode = connection.getResponseCode();
 
@@ -230,7 +248,8 @@ public class CentralCartApiService {
             }
 
             if (responseCode != 200) {
-                throw new Exception("HTTP error code: " + responseCode);
+                String errBody = PluginUtils.readErrorBody(connection);
+                throw new Exception("HTTP " + responseCode + " — body: " + errBody);
             }
 
             // Lê a resposta usando try-with-resources

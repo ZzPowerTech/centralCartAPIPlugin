@@ -10,8 +10,10 @@ api:
   # IMPORTANTE: Nunca compartilhe este token publicamente!
   # Obtenha seu token em: https://centralcart.com.br
   token: "COLOQUE_SEU_TOKEN_AQUI"
-  # Domínio da sua loja (usado no header x-store-domain das APIs de blog/webstore)
-  # Exemplo: loja.austv.net ou sualoja.centralcart.com.br
+  # Domínio da sua loja — enviado no header x-store-domain em TODAS as chamadas
+  # (top doadores/NPCs e posts do blog). A API é multi-tenant: SEM este domínio ela
+  # responde 404 "Store not found" e nem os NPCs nem o broadcast de blog funcionam.
+  # Aceita o host (loja.austv.net) ou a URL completa (https://loja.austv.net/).
   store_domain: "COLOQUE_SEU_DOMINIO_AQUI"
 
 # Mensagens personalizáveis

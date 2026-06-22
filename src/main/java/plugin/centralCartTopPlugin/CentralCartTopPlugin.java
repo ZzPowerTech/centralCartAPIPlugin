@@ -38,8 +38,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     public void onEnable() {
         getLogger().info("§a[CentralCartTopPlugin] Plugin iniciado com sucesso!");
 
-        // Salva o config.yml padrão se não existir
+        // Salva o config.yml padrão se não existir e mescla chaves novas em configs já existentes
         saveDefaultConfig();
+        mergeConfigDefaults();
 
         // Inicializa o gerenciador de mensagens PRIMEIRO
         messagesManager = new MessagesManager(this);
@@ -120,6 +121,20 @@ public final class CentralCartTopPlugin extends JavaPlugin {
         saveConfig();
 
         getLogger().info("§c[CentralCartTopPlugin] Plugin desabilitado!");
+    }
+
+    /**
+     * Mescla no config.yml do servidor as chaves que foram adicionadas em versões posteriores
+     * do plugin (ex.: {@code api.store_domain}, seção {@code blog}). {@code saveDefaultConfig()}
+     * não atualiza arquivos já existentes, então sem isto servidores antigos ficam sem as chaves
+     * novas — foi a causa do broadcast de blog não funcionar (domínio ausente -> 404).
+     *
+     * <p>Valores já definidos pelo usuário são preservados; apenas chaves ausentes recebem o
+     * valor padrão embutido no jar.
+     */
+    private void mergeConfigDefaults() {
+        getConfig().options().copyDefaults(true);
+        saveConfig();
     }
 
     /**

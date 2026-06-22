@@ -1,6 +1,5 @@
 package plugin.centralCartTopPlugin.command;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -8,28 +7,16 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.model.BlogPost;
-import plugin.centralCartTopPlugin.util.MessageFormatter;
+import plugin.centralCartTopPlugin.util.BlogNotifier;
+import plugin.centralCartTopPlugin.util.Constants;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 
+/**
+ * Testa o broadcast de novo post do blog usando o MESMO caminho da task automática
+ * (via {@link BlogNotifier}). Não altera {@code last_seen_post_id}.
+ */
 public class TestBlogPostCommand implements CommandExecutor {
-
-    private static final DateTimeFormatter[] PARSERS = {
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-    };
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final CentralCartTopPlugin plugin;
 
@@ -39,8 +26,14 @@ public class TestBlogPostCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!sender.hasPermission("centralcart.admin")) {
+        if (!sender.hasPermission(Constants.PERMISSION_ADMIN)) {
             sender.sendMessage("§c§l[CentralCart] §cVocê não tem permissão para usar este comando.");
+            return true;
+        }
+
+        if (!plugin.getBlogPostService().isConfigured()) {
+            sender.sendMessage("§c§l[Blog] §capi.store_domain não está configurado no config.yml.");
+            sender.sendMessage("§7Configure §fapi.store_domain: \"loja.austv.net\" §7e use §f/centralcartreload§7.");
             return true;
         }
 
@@ -63,8 +56,6 @@ public class TestBlogPostCommand implements CommandExecutor {
                 return;
             }
 
-            Map<String, String> placeholders = buildPlaceholders(post);
-
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage("§a§l[Blog] §aPost obtido com sucesso!");
                 sender.sendMessage("§7ID: §f" + post.getId());
@@ -73,13 +64,10 @@ public class TestBlogPostCommand implements CommandExecutor {
                 sender.sendMessage("§7Data: §f" + post.getCreatedAt());
                 sender.sendMessage("§e§l[Blog] §eDisparando broadcast...");
 
-                List<String> lines = plugin.getConfig().getStringList("blog.notification.lines");
-                for (String line : lines) {
-                    Component component = MessageFormatter.parse(line, placeholders);
-                    Bukkit.getServer().broadcast(component);
-                }
+                int sent = BlogNotifier.broadcast(plugin, post);
 
-                sender.sendMessage("§a§l[Blog] §aBroadcast enviado! (last_seen_post_id NÃO foi alterado)");
+                sender.sendMessage("§a§l[Blog] §aBroadcast enviado (" + sent
+                        + " linha(s))! §7(last_seen_post_id NÃO foi alterado)");
             });
 
         }).exceptionally(throwable -> {
@@ -91,47 +79,5 @@ public class TestBlogPostCommand implements CommandExecutor {
         });
 
         return true;
-    }
-
-    private Map<String, String> buildPlaceholders(BlogPost post) {
-        Map<String, String> map = new HashMap<>();
-        map.put("title", post.getTitle() != null ? post.getTitle() : "");
-        map.put("url", post.getUrl() != null ? post.getUrl() : "");
-
-        String time = "";
-        String date = "";
-
-        if (post.getCreatedAt() != null && !post.getCreatedAt().isEmpty()) {
-            LocalDateTime dt = tryParseDateTime(post.getCreatedAt());
-            if (dt != null) {
-                time = dt.format(TIME_FORMAT);
-                date = dt.format(DATE_FORMAT);
-            } else {
-                time = post.getCreatedAt();
-                date = post.getCreatedAt();
-            }
-        }
-
-        map.put("time", time);
-        map.put("date", date);
-        return map;
-    }
-
-    private LocalDateTime tryParseDateTime(String raw) {
-        // Tenta primeiro como OffsetDateTime (ex: "2024-03-03T23:43:12.000-03:00")
-        try {
-            return OffsetDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDateTime();
-        } catch (DateTimeParseException ignored) {
-            // segue para os formatos legados
-        }
-
-        for (DateTimeFormatter fmt : PARSERS) {
-            try {
-                return LocalDateTime.parse(raw, fmt);
-            } catch (DateTimeParseException ignored) {
-                // tenta próximo formato
-            }
-        }
-        return null;
     }
 }
