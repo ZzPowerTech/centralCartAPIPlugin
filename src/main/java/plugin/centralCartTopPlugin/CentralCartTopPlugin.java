@@ -1,6 +1,8 @@
 package plugin.centralCartTopPlugin;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import plugin.centralCartTopPlugin.command.CacheInfoCommand;
 import plugin.centralCartTopPlugin.command.MessagesCommand;
@@ -38,8 +40,9 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     public void onEnable() {
         getLogger().info("§a[CentralCartTopPlugin] Plugin iniciado com sucesso!");
 
-        // Salva o config.yml padrão se não existir
+        // Salva o config.yml padrão se não existir e mescla chaves novas em configs já existentes
         saveDefaultConfig();
+        mergeConfigDefaults();
 
         // Inicializa o gerenciador de mensagens PRIMEIRO
         messagesManager = new MessagesManager(this);
@@ -123,6 +126,20 @@ public final class CentralCartTopPlugin extends JavaPlugin {
     }
 
     /**
+     * Mescla no config.yml do servidor as chaves que foram adicionadas em versões posteriores
+     * do plugin (ex.: {@code api.store_domain}, seção {@code blog}). {@code saveDefaultConfig()}
+     * não atualiza arquivos já existentes, então sem isto servidores antigos ficam sem as chaves
+     * novas — foi a causa do broadcast de blog não funcionar (domínio ausente -> 404).
+     *
+     * <p>Valores já definidos pelo usuário são preservados; apenas chaves ausentes recebem o
+     * valor padrão embutido no jar.
+     */
+    private void mergeConfigDefaults() {
+        getConfig().options().copyDefaults(true);
+        saveConfig();
+    }
+
+    /**
      * Inicializa os serviços do plugin
      */
     private void initializeServices() {
@@ -151,16 +168,29 @@ public final class CentralCartTopPlugin extends JavaPlugin {
      * Registra todos os comandos do plugin
      */
     private void registerCommands() {
-        getCommand("topdonadores").setExecutor(new TopDonadoresCommand(this));
-        getCommand("spawntopnpcs").setExecutor(new SpawnTopNpcsCommand(this, apiService, npcManager));
-        getCommand("removetopnpcs").setExecutor(new RemoveTopNpcsCommand(this, npcManager));
-        getCommand("centralcartreload").setExecutor(new ReloadCommand(this));
-        getCommand("testschedule").setExecutor(new TestScheduleCommand(this));
-        getCommand("scheduleinfo").setExecutor(new ScheduleInfoCommand(this));
-        getCommand("testrewards").setExecutor(new TestRewardsCommand(this));
-        getCommand("cacheinfo").setExecutor(new CacheInfoCommand(this));
-        getCommand("messages").setExecutor(new MessagesCommand(this));
-        getCommand("testblogpost").setExecutor(new TestBlogPostCommand(this));
+        registerCommand("topdonadores", new TopDonadoresCommand(this));
+        registerCommand("spawntopnpcs", new SpawnTopNpcsCommand(this, apiService, npcManager));
+        registerCommand("removetopnpcs", new RemoveTopNpcsCommand(this, npcManager));
+        registerCommand("centralcartreload", new ReloadCommand(this));
+        registerCommand("testschedule", new TestScheduleCommand(this));
+        registerCommand("scheduleinfo", new ScheduleInfoCommand(this));
+        registerCommand("testrewards", new TestRewardsCommand(this));
+        registerCommand("cacheinfo", new CacheInfoCommand(this));
+        registerCommand("messages", new MessagesCommand(this));
+        registerCommand("testblogpost", new TestBlogPostCommand(this));
+    }
+
+    /**
+     * Registra um executor para um comando declarado no plugin.yml. Se o comando não existir
+     * (typo no nome ou ausente do plugin.yml), loga um aviso em vez de estourar NPE.
+     */
+    private void registerCommand(String name, CommandExecutor executor) {
+        PluginCommand command = getCommand(name);
+        if (command != null) {
+            command.setExecutor(executor);
+        } else {
+            getLogger().warning("Comando '" + name + "' não encontrado no plugin.yml — não foi registrado.");
+        }
     }
 
     /**

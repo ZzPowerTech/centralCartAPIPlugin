@@ -1,5 +1,5 @@
 name: centralCartTopPlugin
-version: '1.0'
+version: '${version}'
 main: plugin.centralCartTopPlugin.CentralCartTopPlugin
 api-version: '1.21'
 author: CentralCart

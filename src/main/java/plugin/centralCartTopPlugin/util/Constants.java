@@ -1,5 +1,7 @@
 package plugin.centralCartTopPlugin.util;
 
+import java.util.List;
+
 /**
  * Constantes do plugin
  */
@@ -42,10 +44,24 @@ public final class Constants {
     public static final long DEFAULT_CACHE_DURATION_MINUTES = 30;
     public static final String DEFAULT_CURRENCY_SYMBOL = "R$";
     public static final String PLACEHOLDER_TOKEN = "COLOQUE_SEU_TOKEN_AQUI";
+    public static final String PLACEHOLDER_STORE_DOMAIN = "COLOQUE_SEU_DOMINIO_AQUI";
 
     // Blog
     public static final long BLOG_CHECK_INTERVAL_TICKS = TICKS_PER_MINUTE * 5; // 6000 ticks (5 minutos)
     public static final String BLOG_API_URL = "https://api.centralcart.com.br/v1/webstore/post";
+
+    /**
+     * Linhas de notificação usadas como fallback quando {@code blog.notification.lines}
+     * está ausente no config (ex.: servidores cujo config.yml foi gerado antes da feature de blog).
+     */
+    public static final List<String> DEFAULT_BLOG_NOTIFICATION_LINES = List.of(
+        "&6&l========================================",
+        "  &f📢 <gold><bold>Nova Postagem no Blog!</bold></gold>",
+        "  <white>Uma nova postagem foi feita no site!</white>",
+        "  <click:open_url:'{url}'><aqua>➡️ Clique aqui para ler</aqua></click>",
+        "  <gray>🕒 {time} - {title}</gray>",
+        "&6&l========================================"
+    );
 
     // Prefixos de log
     public static final String LOG_PREFIX = "[CentralCartTopPlugin]";

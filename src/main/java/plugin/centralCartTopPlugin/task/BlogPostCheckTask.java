@@ -1,32 +1,28 @@
 package plugin.centralCartTopPlugin.task;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 import plugin.centralCartTopPlugin.CentralCartTopPlugin;
 import plugin.centralCartTopPlugin.model.BlogPost;
-import plugin.centralCartTopPlugin.util.MessageFormatter;
+import plugin.centralCartTopPlugin.util.BlogNotifier;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 
+/**
+ * Verifica periodicamente novos posts no blog e dispara o broadcast.
+ *
+ * <p>Estratégia de detecção:
+ * <ul>
+ *   <li><b>Seeding</b>: na primeira execução (sem {@code last_seen_post_id}), apenas marca o post
+ *       mais recente como visto, sem anunciar — evita spammar posts antigos ao subir o servidor.</li>
+ *   <li><b>Múltiplos posts</b>: anuncia todos os posts mais novos que o último visto (do mais antigo
+ *       para o mais recente), e não apenas o primeiro da lista.</li>
+ * </ul>
+ */
 public class BlogPostCheckTask extends BukkitRunnable {
-
-    private static final DateTimeFormatter[] PARSERS = {
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-    };
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final CentralCartTopPlugin plugin;
 
@@ -36,42 +32,61 @@ public class BlogPostCheckTask extends BukkitRunnable {
 
     @Override
     public void run() {
-        plugin.getBlogPostService().getLatestPost().thenAccept(optPost -> {
-            if (optPost.isEmpty()) {
-                plugin.getLogger().warning("[Blog] Nenhum post retornado pela API.");
-                return;
-            }
-
-            BlogPost post = optPost.get();
-
-            if (post.getId() == null || post.getId().isEmpty()) {
-                plugin.getLogger().warning("[Blog] Post sem ID recebido — ignorando.");
-                return;
-            }
-
-            String lastSeenId = plugin.getConfig().getString("blog.last_seen_post_id", "");
-
-            if (post.getId().equals(lastSeenId)) {
-                plugin.getLogger().log(Level.FINE, "[Blog] Nenhum post novo (ID {0} já visto).", post.getId());
-                return;
-            }
-
-            plugin.getLogger().info("[Blog] Novo post detectado: " + post.getTitle());
-
-            Map<String, String> placeholders = buildPlaceholders(post);
-
-            // Agenda broadcast na thread principal
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                List<String> lines = plugin.getConfig().getStringList("blog.notification.lines");
-                for (String line : lines) {
-                    Component component = MessageFormatter.parse(line, placeholders);
-                    Bukkit.getServer().broadcast(component);
+        plugin.getBlogPostService().getRecentPosts().thenAccept(posts -> {
+            List<BlogPost> valid = new ArrayList<>();
+            for (BlogPost post : posts) {
+                if (post.getId() != null && !post.getId().isEmpty()) {
+                    valid.add(post);
                 }
+            }
 
-                plugin.getConfig().set("blog.last_seen_post_id", post.getId());
+            if (valid.isEmpty()) {
+                plugin.getLogger().log(Level.FINE, "[Blog] Nenhum post válido retornado pela API.");
+                return;
+            }
+
+            BlogPost newest = valid.get(0);
+            String lastSeen = plugin.getConfig().getString("blog.last_seen_post_id", "");
+
+            // Primeira execução / estado limpo: faz seeding sem anunciar.
+            if (lastSeen.isEmpty()) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    plugin.getConfig().set("blog.last_seen_post_id", newest.getId());
+                    plugin.saveConfig();
+                    plugin.getLogger().info("[Blog] Inicialização: post mais recente (ID " + newest.getId()
+                            + ") marcado como visto. Próximos posts serão anunciados.");
+                });
+                return;
+            }
+
+            // Coleta os posts mais novos que o último visto. A API entrega em ordem decrescente,
+            // então paramos assim que encontramos um post que não é mais novo.
+            List<BlogPost> novos = new ArrayList<>();
+            for (BlogPost post : valid) {
+                if (isNewer(post.getId(), lastSeen)) {
+                    novos.add(post);
+                } else {
+                    break;
+                }
+            }
+
+            if (novos.isEmpty()) {
+                plugin.getLogger().log(Level.FINE, "[Blog] Nenhum post novo (último visto: {0}).", lastSeen);
+                return;
+            }
+
+            // Anuncia do mais antigo para o mais recente, para manter a ordem cronológica no chat.
+            Collections.reverse(novos);
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                for (BlogPost post : novos) {
+                    plugin.getLogger().info("[Blog] Novo post detectado: " + post.getTitle());
+                    BlogNotifier.broadcast(plugin, post);
+                }
+                plugin.getConfig().set("blog.last_seen_post_id", newest.getId());
                 plugin.saveConfig();
-
-                plugin.getLogger().info("[Blog] Broadcast realizado e last_seen_post_id atualizado para " + post.getId());
+                plugin.getLogger().info("[Blog] " + novos.size() + " post(s) anunciado(s). last_seen_post_id = "
+                        + newest.getId());
             });
 
         }).exceptionally(throwable -> {
@@ -80,45 +95,15 @@ public class BlogPostCheckTask extends BukkitRunnable {
         });
     }
 
-    private Map<String, String> buildPlaceholders(BlogPost post) {
-        Map<String, String> map = new HashMap<>();
-        map.put("title", post.getTitle() != null ? post.getTitle() : "");
-        map.put("url", post.getUrl() != null ? post.getUrl() : "");
-
-        String time = "";
-        String date = "";
-
-        if (post.getCreatedAt() != null && !post.getCreatedAt().isEmpty()) {
-            LocalDateTime dt = tryParseDateTime(post.getCreatedAt());
-            if (dt != null) {
-                time = dt.format(TIME_FORMAT);
-                date = dt.format(DATE_FORMAT);
-            } else {
-                time = post.getCreatedAt();
-                date = post.getCreatedAt();
-            }
-        }
-
-        map.put("time", time);
-        map.put("date", date);
-        return map;
-    }
-
-    private LocalDateTime tryParseDateTime(String raw) {
-        // Tenta primeiro como OffsetDateTime (ex: "2024-03-03T23:43:12.000-03:00")
+    /**
+     * Compara IDs de post. IDs são numéricos (auto-increment) na API; usa comparação numérica
+     * e degrada para comparação textual de igualdade caso não sejam parseáveis.
+     */
+    private boolean isNewer(String candidateId, String lastSeenId) {
         try {
-            return OffsetDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toLocalDateTime();
-        } catch (DateTimeParseException ignored) {
-            // segue para os formatos legados
+            return Long.parseLong(candidateId) > Long.parseLong(lastSeenId);
+        } catch (NumberFormatException e) {
+            return !candidateId.equals(lastSeenId);
         }
-
-        for (DateTimeFormatter fmt : PARSERS) {
-            try {
-                return LocalDateTime.parse(raw, fmt);
-            } catch (DateTimeParseException ignored) {
-                // tenta próximo formato
-            }
-        }
-        return null;
     }
 }
