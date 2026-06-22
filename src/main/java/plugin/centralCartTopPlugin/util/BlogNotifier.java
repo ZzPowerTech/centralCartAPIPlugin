@@ -65,7 +65,7 @@ public final class BlogNotifier {
         Map<String, String> placeholders = buildPlaceholders(post);
 
         List<String> lines = plugin.getConfig().getStringList("blog.notification.lines");
-        if (lines == null || lines.isEmpty()) {
+        if (lines.isEmpty()) {
             lines = Constants.DEFAULT_BLOG_NOTIFICATION_LINES;
             plugin.getLogger().warning("[Blog] 'blog.notification.lines' ausente no config — usando layout padrão.");
         }

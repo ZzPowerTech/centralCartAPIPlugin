@@ -49,7 +49,7 @@ public class BlogPostCheckTask extends BukkitRunnable {
             String lastSeen = plugin.getConfig().getString("blog.last_seen_post_id", "");
 
             // Primeira execução / estado limpo: faz seeding sem anunciar.
-            if (lastSeen == null || lastSeen.isEmpty()) {
+            if (lastSeen.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     plugin.getConfig().set("blog.last_seen_post_id", newest.getId());
                     plugin.saveConfig();
